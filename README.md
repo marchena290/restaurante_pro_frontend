@@ -1,27 +1,25 @@
-# Restaurante Pro — Frontend
+# 🚀 Restaurante Pro — Frontend
 
-Elegant, focused frontend for the Restaurante Pro system.
-
-This repository contains the Angular-based frontend application that consumes the existing Spring Boot REST API (the backend lives in a different repository). The goal of this frontend is to provide a light, maintainable, and testable UI for restaurant staff and clients: login, manage mesas, menús, reservaciones and view reports.
+¡Bienvenido al frontend de Restaurante Pro! Este repositorio contiene la aplicación Angular que consume la API REST del backend (Spring Boot). Está pensada para ser ligera, mantenible y fácil de probar: login, gestión de mesas, menús, reservaciones y reportes.
 
 ---
 
-**Quick summary**
+✨ **Resumen rápido**
 
-- **Stack:** Angular, TypeScript, SCSS
-- **API:** The app talks to the backend base URL configured in `src/environments/environment.ts` (default: `http://localhost:8080/api`).
-- **Auth:** JWT-based login. The frontend stores the token in `localStorage` under the key `restpro_token` and attaches it to requests via an HTTP interceptor.
+- **Stack:** Angular + TypeScript + SCSS
+- **API base:** `src/environments/environment.ts` (por defecto `http://localhost:8080/api`)
+- **Autenticación:** JWT. Token guardado en `localStorage` con la clave `restpro_token` y añadido a las peticiones por un interceptor HTTP.
 
 ---
 
-**Setup & Run (Development)**
+🛠️ **Instalación y ejecución (desarrollo)**
 
-Prerequisites:
+Requisitos:
 
-- Node.js (recommended 16+ or as required by your Angular version)
-- npm (or Yarn)
+- Node.js (recomendado 16+ según la versión de Angular)
+- npm (o Yarn)
 
-Install and run the dev server:
+Comandos (PowerShell):
 
 ```powershell
 cd "c:\Users\alons\OneDrive\Escritorio\restaurante-front-end"
@@ -29,9 +27,9 @@ npm install
 npm run start
 ```
 
-Open the app at `http://localhost:4200/` (default from Angular CLI).
+La app se abrirá en `http://localhost:4200/`.
 
-If your backend runs on a different host/port, update `src/environments/environment.ts`:
+Si el backend está en otra URL, actualiza `src/environments/environment.ts`:
 
 ```ts
 export const environment = {
@@ -42,59 +40,71 @@ export const environment = {
 
 ---
 
-**Authentication details (important for devs)**
+🔐 **Autenticación (importante para desarrolladores)**
 
-- Login request: `POST /api/auth/login` with credentials.
-- The backend returns a token (field name may be `accessToken` or `token`). The frontend normalises that and stores the token in `localStorage` under `restpro_token`.
-- An HTTP interceptor reads the token and adds an `Authorization: Bearer <token>` header to outgoing requests (except login).
-- If you see empty `localStorage`, inspect the login response in the browser DevTools Network tab to confirm the token field name and shape.
+- Endpoint de login: `POST /api/auth/login` con credenciales.
+- El backend devuelve un token (puede venir como `accessToken` o `token`). El frontend normaliza el campo y lo guarda en `localStorage` bajo `restpro_token`.
+- Un `TokenInterceptor` añade `Authorization: Bearer <token>` a las peticiones (excepto la de login).
+- Si no ves el token en `localStorage`, abre DevTools → Network → selecciona la petición de login y revisa la respuesta para comprobar el nombre del campo.
 
----
-
-**Developer workflow & tips**
-
-- Use the built-in Angular dev server for quick development: `npm run start`.
-- To run unit tests (if present): `npm test`.
-- To build for production: `npm run build -- --configuration production` (or `ng build --configuration production`).
-- If you face CORS issues when calling the backend, enable CORS on the Spring Boot server or use a development proxy.
-- Keep API DTOs and models synchronized with the backend. This project stores TypeScript interfaces in `src/app/models/` (if present).
+⚠️ Consejo: Para depurar rápido, añade `console.log` en `AuthService` donde se guarda el token y revisa la consola del navegador.
 
 ---
 
-**Project Structure (high-level)**
+🧭 **Flujos y features principales**
 
-- `src/app/` — application code (components, services, guards, interceptors)
-- `src/environments/` — environment configs (update `apiUrl` as needed)
-- `src/styles.scss` — global styles
-
----
-
-**Common troubleshooting**
-
-- Token not being stored: Check login response shape and console logs added in `AuthService`.
-- 401 responses: verify token was attached by the interceptor and not expired.
-- API not reachable: check `environment.apiUrl` and backend running status.
+- Login / Logout
+- Gestión de usuarios y permisos (si procede)
+- CRUD de mesas y menús
+- Reserva de mesas y administración de estados de reserva
+- Dashboard de reportes (ventas, reservas, ocupación)
 
 ---
 
-**Contributing & Notes**
+🧰 **Buenas prácticas y tips de desarrollo**
 
-- This repo focuses on the frontend only. Backend issues should be opened in the backend repository.
-- Prefer small, focused pull requests and include screenshots for UI changes where useful.
-- Add unit tests for services and guards; prefer integration tests for important flows.
-
----
-
-If you want, I can also:
-
-- Add a short development checklist and a contributor template.
-- Produce an English version of this README.
-- Commit and push the file to the remote for you (I can provide the commands).
+- Usa `npm run start` para desarrollo rápido.
+- Pruebas: `npm test` (si están configuradas).
+- Build producción: `npm run build -- --configuration production`.
+- Si hay problemas de CORS, habilítalo en el backend o usa un proxy de desarrollo.
+- Mantén actualizados los DTOs/Interfaces de `src/app/models/` con el backend.
 
 ---
 
-Generated on: 2025-11-17
-# RestauranteFrontEnd
+🛠️ **Estructura principal del proyecto**
+
+- `src/app/` — código de la app (componentes, servicios, guards, interceptors)
+- `src/environments/` — variables de entorno (modifica `apiUrl` si es necesario)
+- `src/styles.scss` — estilos globales
+
+---
+
+🐞 **Solución rápida a problemas comunes**
+
+- Token no guardado: revisa la respuesta del login y las llamadas en `AuthService`.
+- 401/403: verifica que el token se adjunta y no esté expirado.
+- API no accesible: comprueba `environment.apiUrl` y que el backend esté corriendo.
+
+---
+
+🤝 **Contribuir**
+
+- Este repositorio es sólo frontend; los issues del backend deben abrirse en el repositorio del backend.
+- Prefiere PRs pequeños y descriptivos. Añade capturas de pantalla para cambios UI.
+- Añade tests para servicios y guards; las integraciones críticas deberían cubrirse con tests.
+
+---
+
+📌 ¿Quieres que haga esto por ti?
+
+- Puedo añadir una versión en inglés.
+- Puedo crear un `CONTRIBUTING.md` y plantillas de PR/Issue.
+- Puedo commitear y empujar estos cambios (ya lo haré ahora).
+
+---
+
+Generado: 2025-11-17
+
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.10.
 
