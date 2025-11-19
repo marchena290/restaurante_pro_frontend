@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { User } from '../../models/user.model';
 import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
+import { ConfirmService } from '../../services/confirm.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -82,6 +84,7 @@ import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
               <td>
                 <div class="action-buttons">
                   <button
+                    type="button"
                     class="btn-action btn-edit"
                     (click)="editUser(user)"
                     title="Editar"
@@ -89,6 +92,7 @@ import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
                     ✏️
                   </button>
                   <button
+                    type="button"
                     class="btn-action"
                     [class]="user.active ? 'btn-deactivate' : 'btn-activate'"
                     (click)="toggleUserStatus(user)"
@@ -97,11 +101,14 @@ import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
                     {{ user.active ? '🚫' : '✅' }}
                   </button>
                   <button
+                    type="button"
                     class="btn-action btn-delete"
-                    (click)="deleteUser(user.id)"
+                    (click)="onDeleteClicked(user.id)"
+                    [disabled]="submitting"
                     title="Eliminar"
                   >
-                    🗑️
+                    <span *ngIf="!submitting">🗑️</span>
+                    <span *ngIf="submitting">⏳</span>
                   </button>
                 </div>
               </td>
@@ -111,14 +118,16 @@ import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
       </div>
 
       <!-- Modal -->
-      <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
+       <div class="modal-overlay usuarios-modal-overlay" *ngIf="showModal" (click)="closeModal()"
+         style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999;">
+         <div class="modal-content usuarios-modal-content" (click)="$event.stopPropagation()"
+           style="width:560px;max-width:100%;padding:18px 20px;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,0.18);background:#fff;color:#222;">
+          <div class="modal-header usuarios-modal-header">
             <h3>{{ editingUser ? 'Editar' : 'Nuevo' }} Usuario</h3>
             <button class="modal-close" (click)="closeModal()">✕</button>
           </div>
 
-          <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="modal-form">
+          <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="modal-form usuarios-modal-form">
             <div class="form-group">
               <label>Nombre Completo *</label>
               <input
@@ -171,7 +180,9 @@ import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
                 <div class="error-message" *ngIf="userForm.get('role')?.invalid && userForm.get('role')?.touched">
                   Rol es requerido
                 </div>
-              </div>
+                </div>
+
+                <!-- confirmation handled via ConfirmService -->
             </div>
 
             <div class="form-group" *ngIf="editingUser">
@@ -203,22 +214,159 @@ import { UsuariosService, UsuarioDto } from '../../services/usuarios.service';
       </div>
     </div>
   `,
-  styles: [/* styles kept in global stylesheet; component uses existing app styles */]
+  styles: [
+    `
+    /* Modal overlay and content */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.48);
+      z-index: 1200;
+      padding: 20px;
+    }
+
+    .modal-content {
+      width: 560px;
+      max-width: 100%;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+      padding: 18px 20px;
+      color: #222;
+      font-family: inherit;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 1.15rem;
+      cursor: pointer;
+      color: #444;
+    }
+
+    /* Form layout */
+    .modal-form .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-form .form-group {
+      margin-bottom: 10px;
+    }
+
+    .modal-form .form-control {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #d2d8de;
+      background: #fff;
+      box-sizing: border-box;
+      font-size: 0.95rem;
+    }
+
+    .error-message { color: #b32a2a; font-size: 0.85rem; margin-top: 4px; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary { background: #0d6efd; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+
+    /* Page header and controls */
+    .page-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:14px;
+      gap:12px;
+    }
+
+    .page-header h2 { margin:0; font-size:1.25rem; }
+
+    .page-header .btn-primary {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:8px;
+    }
+
+    /* Table adjustments */
+    .data-table th, .data-table td {
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .user-avatar, .name-avatar {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:34px;
+      height:34px;
+      border-radius:50%;
+      background:#eef4ff;
+      color:#0d6efd;
+      font-weight:700;
+      margin-right:8px;
+    }
+
+    @media (max-width:640px) {
+      .modal-content { width: 100%; padding: 14px; }
+      .modal-form .form-row { flex-direction: column; }
+    }
+    .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
+    .confirm-text { font-size:0.9rem; color:#374151; margin-right:6px; }
+    .btn-sm { padding:6px 8px; border-radius:6px; font-size:0.85rem; }
+    `
+  ]
 })
 export class UsuariosComponent implements OnInit {
   users: User[] = [];
   filteredUsers: User[] = [];
   loading = false;
+  submitting = false;
   errorMessage = '';
   searchTerm = '';
   selectedRole = '';
   selectedActive = '';
   showModal = false;
   editingUser: User | null = null;
+  // confirmation handled via ConfirmService
 
   userForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private usuariosService: UsuariosService) {
+  constructor(private fb: FormBuilder, private usuariosService: UsuariosService, private confirmService: ConfirmService, private notification: NotificationService) {
     this.userForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -246,8 +394,8 @@ export class UsuariosComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error cargando usuarios desde backend', err);
         this.errorMessage = 'No se pudieron cargar los usuarios. Intenta nuevamente.';
+        this.notification.show('No se pudieron cargar los usuarios desde el servidor', 'error');
         this.loading = false;
       }
     });
@@ -301,56 +449,131 @@ export class UsuariosComponent implements OnInit {
   }
 
   deleteUser(id: string) {
-    if (confirm('¿Está seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
-      this.users = this.users.filter(u => u.id !== id);
-      this.filterUsers();
-    }
+    this.onDeleteClicked(id);
+  }
+  onDeleteClicked(id: string) {
+    this.confirmService.confirm({
+      title: 'Eliminar usuario',
+      message: '¿Está seguro de eliminar este usuario? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      cancelLabel: 'Cancelar'
+    }).then((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.submitting = true;
+      this.usuariosService.delete(Number(id)).subscribe({
+        next: () => {
+          this.reloadUsers();
+          this.submitting = false;
+          this.notification.show('Usuario eliminado correctamente', 'success', 4000, 'bottom-right');
+        },
+        error: (err) => {
+            this.submitting = false;
+            this.notification.show('No se pudo eliminar el usuario', 'error');
+        }
+      });
+      }).catch(err => { this.notification.show('Error en confirmación', 'error'); });
   }
 
   toggleUserStatus(user: User) {
     const index = this.users.findIndex(u => u.id === user.id);
     if (index !== -1) {
-      this.users[index].active = !this.users[index].active;
-      this.filterUsers();
+      const updated = { active: !this.users[index].active };
+      // call backend update if available
+      this.submitting = true;
+      this.usuariosService.update(Number(user.id), { role: user.role, nombre: user.name, email: user.email }).subscribe({
+        next: () => {
+          this.reloadUsers();
+          this.submitting = false;
+        },
+        error: () => {
+          this.submitting = false;
+          this.notification.show('No se pudo actualizar el estado del usuario', 'error');
+        }
+      });
     }
   }
 
   onSubmit() {
     if (this.userForm.valid) {
       const formData = this.userForm.value;
-
+      this.submitting = true;
       if (this.editingUser) {
-        // Update existing user
-        const index = this.users.findIndex(u => u.id === this.editingUser!.id);
-        this.users[index] = {
-          ...this.editingUser,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-          active: formData.active
-        };
-
-        // Only update password if provided
-        if (formData.password) {
-          this.users[index].password = formData.password;
-        }
+        // update via backend
+        const payload: any = { nombre: formData.name, email: formData.email, role: formData.role };
+        if (formData.password) payload.password = formData.password;
+        // Debug: show what we are sending to the server (temporary)
+        this.notification.show(`Enviando UPDATE: email=${payload.email}`, 'info', 6000);
+        this.usuariosService.update(Number(this.editingUser.id), payload).subscribe({
+          next: () => {
+            // refresh the single user from server to ensure displayed fields match backend
+            const id = Number(this.editingUser?.id);
+            if (id) {
+              this.usuariosService.get(id).subscribe({
+                next: (u) => {
+                  // map DTO -> User and replace in local list
+                  const updated: User = {
+                    id: String(u.id),
+                    name: u.nombre ?? u.username,
+                    email: u.email ?? '',
+                    role: u.role ?? 'Empleado',
+                    active: true,
+                    createdAt: new Date()
+                  } as User;
+                  const idx = this.users.findIndex(x => x.id === String(u.id));
+                  if (idx !== -1) this.users[idx] = updated;
+                  this.filterUsers();
+                  this.submitting = false;
+                  this.closeModal();
+                  // Debug: show what the server returned for email
+                  this.notification.show(`Server returned email: ${u.email ?? '(empty)'}`, 'info', 6000);
+                  this.notification.show('Usuario actualizado correctamente', 'success');
+                },
+                error: () => {
+                  // fallback: reload full list
+                  this.reloadUsers();
+                  this.submitting = false;
+                  this.closeModal();
+                  this.notification.show('Usuario actualizado (refrescando lista)', 'success');
+                }
+              });
+            } else {
+              this.reloadUsers();
+              this.submitting = false;
+              this.closeModal();
+              this.notification.show('Usuario actualizado correctamente', 'success');
+            }
+          },
+            error: (err) => { this.submitting = false; this.notification.show('Error actualizando usuario', 'error'); }
+        });
       } else {
-        // Create new user
-        const newUser: User = {
-          id: Date.now().toString(),
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          active: formData.active,
-          createdAt: new Date()
-        };
-        this.users.push(newUser);
+        // create via backend
+        const username = formData.email ?? formData.name.replace(/\s+/g, '').toLowerCase();
+        const payload = { username, password: formData.password, nombre: formData.name, email: formData.email, role: formData.role };
+        this.usuariosService.create(payload).subscribe({
+          next: () => { this.reloadUsers(); this.submitting = false; this.closeModal(); this.notification.show('Usuario creado correctamente', 'success'); },
+            error: (err) => { this.submitting = false; this.notification.show('Error creando usuario', 'error'); }
+        });
       }
-
-      this.filterUsers();
-      this.closeModal();
     }
+  }
+
+  private reloadUsers() {
+    this.loading = true;
+    this.usuariosService.list().subscribe({
+      next: (users: UsuarioDto[]) => {
+        this.users = users.map(u => ({
+          id: String(u.id),
+          name: u.nombre ?? u.username,
+          email: u.email ?? '',
+          role: (u.role ?? 'Empleado'),
+          active: true,
+          createdAt: new Date()
+        } as User));
+        this.filterUsers();
+        this.loading = false;
+      },
+      error: (err) => { console.error(err); this.loading = false; }
+    });
   }
 
   formatDate(date: Date): string {

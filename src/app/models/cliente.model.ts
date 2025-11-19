@@ -13,6 +13,7 @@ export interface CreateClienteDto {
   telefono?: string;
   email?: string;
   nota?: string;
+  direccion?: string;
 }
 
 export interface UpdateClienteDto {
@@ -21,4 +22,5 @@ export interface UpdateClienteDto {
   telefono?: string;
   email?: string;
   nota?: string;
+  direccion?: string;
 }

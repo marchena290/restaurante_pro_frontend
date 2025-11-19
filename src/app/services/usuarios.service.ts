@@ -24,5 +24,16 @@ export class UsuariosService {
     return this.http.get<UsuarioDto>(`${this.base}/${id}`);
   }
 
-  // create/update/delete can be added later
+  // create/update/delete
+  create(payload: { username: string; password: string; nombre?: string; email?: string; role?: string }) {
+    return this.http.post<UsuarioDto>(this.base, payload);
+  }
+
+  update(id: number | string, payload: { nombre?: string; email?: string; role?: string; password?: string }) {
+    return this.http.put<UsuarioDto>(`${this.base}/${id}`, payload);
+  }
+
+  delete(id: number | string) {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
 }

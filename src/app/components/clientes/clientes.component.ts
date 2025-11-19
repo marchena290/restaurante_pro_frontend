@@ -2,6 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Client, CreateClientRequest } from '../../models/client.model';
+import { ClientesService } from '../../services/clientes.service';
+import { Cliente as ClienteApi, CreateClienteDto, UpdateClienteDto } from '../../models/cliente.model';
+import { ConfirmService } from '../../services/confirm.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-clientes',
@@ -70,11 +74,14 @@ import { Client, CreateClientRequest } from '../../models/client.model';
                     ✏️
                   </button>
                   <button
+                    type="button"
                     class="btn-action btn-delete"
-                    (click)="deleteClient(client.id)"
+                    (click)="onDeleteClicked(client.id)"
+                    [disabled]="isSubmitting"
                     title="Eliminar"
                   >
-                    🗑️
+                    <span *ngIf="!isSubmitting">🗑️</span>
+                    <span *ngIf="isSubmitting">⏳</span>
                   </button>
                 </div>
               </td>
@@ -84,14 +91,14 @@ import { Client, CreateClientRequest } from '../../models/client.model';
       </div>
 
       <!-- Modal -->
-      <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>{{ editingClient ? 'Editar' : 'Nuevo' }} Cliente</h3>
-            <button class="modal-close" (click)="closeModal()">✕</button>
+      <div class="modal-overlay clientes-modal-overlay" *ngIf="showModal" (click)="closeModal()">
+        <div class="modal-content clientes-modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header clientes-modal-header">
+            <h3 class="modal-title">{{ editingClient ? 'Editar' : 'Nuevo' }} Cliente</h3>
+            <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">✕</button>
           </div>
 
-          <form [formGroup]="clientForm" (ngSubmit)="onSubmit()" class="modal-form">
+          <form [formGroup]="clientForm" (ngSubmit)="onSubmit()" class="modal-form clientes-modal-form">
             <div class="form-group">
               <label>Nombre Completo *</label>
               <input
@@ -131,7 +138,8 @@ import { Client, CreateClientRequest } from '../../models/client.model';
                 <div class="error-message" *ngIf="clientForm.get('phone')?.invalid && clientForm.get('phone')?.touched">
                   Teléfono es requerido
                 </div>
-              </div>
+                </div>
+
             </div>
 
             <div class="form-group">
@@ -161,7 +169,51 @@ import { Client, CreateClientRequest } from '../../models/client.model';
       </div>
     </div>
   `,
-  styles: [``]
+  styles: [
+    `
+    /* Component-scoped Clientes styles (BoltNew-inspired modal) */
+    .clientes { padding: 24px; min-height: 100%; background: #f8fafc; }
+
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
+    .page-header h2 { margin:0; font-size:1.875rem; font-weight:700; color:#0f172a; }
+
+    .filters-section { background:white; padding:16px; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); margin-bottom:20px; }
+
+    .table-container { background:white; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); overflow:hidden; }
+    .data-table th, .data-table td { padding:12px 16px; }
+
+    /* Modal base */
+    .modal-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.45); z-index:2000; padding:20px; }
+
+    .modal-content { background:var(--white); border-radius:12px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 48px rgba(2,6,23,0.12); }
+
+    .modal-header { padding:18px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; }
+    .modal-title { margin:0; font-size:1.125rem; font-weight:700; color:#0f172a; }
+    .modal-close { background:transparent; border:none; font-size:1.05rem; color:#475569; padding:6px; border-radius:6px; cursor:pointer; }
+    .modal-close:hover { background:#f1f5f9; color:#0f172a; }
+
+    .modal-form { padding:14px 20px 20px 20px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+
+    .form-control { padding:10px 12px; border:1px solid #e6eefb; border-radius:8px; font-size:0.95rem; background:#fbfdff; transition:box-shadow .12s ease, border-color .12s ease; }
+    .form-control:focus { outline:none; box-shadow:0 6px 18px rgba(59,130,246,0.12); border-color:#3b82f6; }
+
+    .error-message { color:#dc2626; font-size:0.85rem; }
+
+    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; padding-top:10px; border-top:1px solid #f8fafc; }
+    .btn-primary { min-width:130px; }
+
+    /* Clientes-specific modifiers */
+    .clientes-modal-overlay { background: rgba(2,6,23,0.55) !important; }
+    .clientes-modal-content { border-radius:12px !important; }
+
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } .modal-content { margin:10px; max-width:100%; } }
+    .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
+    .confirm-text { font-size:0.9rem; color:#374151; margin-right:6px; }
+    .btn-sm { padding:6px 8px; border-radius:6px; font-size:0.85rem; }
+    `
+  ]
 })
 export class ClientesComponent implements OnInit {
   clients: Client[] = [];
@@ -169,10 +221,12 @@ export class ClientesComponent implements OnInit {
   searchTerm = '';
   showModal = false;
   editingClient: Client | null = null;
+  isLoading = false;
+  isSubmitting = false;
 
   clientForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private clientesService: ClientesService, private confirmService: ConfirmService, private notification: NotificationService) {
     this.clientForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -182,18 +236,31 @@ export class ClientesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadMockData();
-    this.filterClients();
+    this.loadClients();
   }
-
-  private loadMockData() {
-    this.clients = [
-      { id: '1', name: 'Juan Pérez García', email: 'juan.perez@email.com', phone: '555-0101', address: 'Av. Principal 123, Colonia Centro', createdAt: new Date('2024-01-15'), totalReservations: 12 },
-      { id: '2', name: 'María Elena García', email: 'maria.garcia@email.com', phone: '555-0102', address: 'Calle Secundaria 456, Zona Norte', createdAt: new Date('2024-02-20'), totalReservations: 8 },
-      { id: '3', name: 'Carlos López Mendoza', email: 'carlos.lopez@email.com', phone: '555-0103', createdAt: new Date('2024-03-10'), totalReservations: 15 },
-      { id: '4', name: 'Ana Sofía Rodríguez', email: 'ana.rodriguez@email.com', phone: '555-0104', address: 'Plaza Mayor 789, Centro Histórico', createdAt: new Date('2024-04-05'), totalReservations: 6 },
-      { id: '5', name: 'Roberto Martínez', email: 'roberto.martinez@email.com', phone: '555-0105', address: 'Paseo de la Reforma 321, Zona Rosa', createdAt: new Date('2024-05-12'), totalReservations: 9 }
-    ];
+  private loadClients() {
+    this.isLoading = true;
+    this.clientesService.list().subscribe({
+      next: (list: ClienteApi[]) => {
+        // Map API Cliente -> view Client
+        this.clients = list.map(c => ({
+          id: String(c.clienteId),
+          name: `${c.nombre}${c.apellido ? ' ' + c.apellido : ''}`.trim(),
+          email: c.email ?? '',
+          phone: c.telefono ?? '',
+          // backend may return 'direccion' or older 'nota' field — prefer 'direccion'
+          address: (c as any).direccion ?? c.nota ?? '',
+          createdAt: undefined,
+          totalReservations: 0
+        } as Client));
+        this.filterClients();
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+        // keep previous data if any
+      }
+    });
   }
 
   filterClients() {
@@ -232,35 +299,65 @@ export class ClientesComponent implements OnInit {
     });
   }
 
-  deleteClient(id: string) {
-    if (confirm('¿Está seguro de eliminar este cliente? Esta acción no se puede deshacer.')) {
-      this.clients = this.clients.filter(c => c.id !== id);
-      this.filterClients();
-    }
+  onDeleteClicked(id: string) {
+    this.confirmService.confirm({
+      title: 'Eliminar cliente',
+      message: '¿Está seguro de eliminar este cliente? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      cancelLabel: 'Cancelar'
+    }).then((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.isSubmitting = true;
+      const clienteId = Number(id);
+      this.clientesService.delete(clienteId).subscribe({
+        next: () => {
+          this.loadClients();
+          this.isSubmitting = false;
+          this.notification.show('Cliente eliminado correctamente', 'success', 4000, 'bottom-right');
+        },
+        complete: () => {},
+        error: () => {
+          this.isSubmitting = false;
+          this.notification.show('No se pudo eliminar el cliente.', 'error');
+        }
+      });
+    }).catch(err => { this.notification.show('Error en confirmación', 'error'); });
   }
 
   onSubmit() {
     if (this.clientForm.valid) {
       const formData = this.clientForm.value as CreateClientRequest;
-
+      this.isSubmitting = true;
       if (this.editingClient) {
-        const index = this.clients.findIndex(c => c.id === this.editingClient!.id);
-        this.clients[index] = {
-          ...this.editingClient,
-          ...formData
-        } as Client;
-      } else {
-        const newClient: Client = {
-          id: Date.now().toString(),
-          ...formData,
-          createdAt: new Date(),
-          totalReservations: 0
+        // Update existing
+        const clienteId = Number(this.editingClient.id);
+        const dto: UpdateClienteDto = {
+          nombre: formData.name,
+          email: formData.email,
+          telefono: formData.phone,
+          // send both for compatibility: 'nota' kept, 'direccion' preferred by backend
+          nota: formData.address,
+          direccion: formData.address
         };
-        this.clients.push(newClient);
+        this.clientesService.update(clienteId, dto).subscribe({
+          next: () => { this.loadClients(); this.isSubmitting = false; this.closeModal(); this.notification.show('Cliente actualizado correctamente', 'success'); },
+          error: () => { this.isSubmitting = false; this.notification.show('Error actualizando cliente', 'error'); }
+        });
+      } else {
+        // Create
+        const dto: CreateClienteDto = {
+          nombre: formData.name,
+          email: formData.email,
+          telefono: formData.phone,
+          // include both keys to ensure backend receives the address regardless of field name
+          nota: formData.address,
+          direccion: formData.address
+        };
+        this.clientesService.create(dto).subscribe({
+          next: () => { this.loadClients(); this.isSubmitting = false; this.closeModal(); this.notification.show('Cliente creado correctamente', 'success'); },
+          error: () => { this.isSubmitting = false; this.notification.show('Error creando cliente', 'error'); }
+        });
       }
-
-      this.filterClients();
-      this.closeModal();
     }
   }
 
