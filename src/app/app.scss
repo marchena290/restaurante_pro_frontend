@@ -1,0 +1,25 @@
+
+/* App-specific overrides (kept intentionally lightweight). Global layout
+   rules live in `src/styles.scss`. */
+
+.app-layout { }
+.main-area { }
+.content-area { }
+
+/* Ensure when the shell is hidden (login) the routed view uses the
+   global .login-page styles and does not inherit main padding. */
+.content-area.full.login-page {
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure the login main expands to full width inside the app layout
+    so the centered card doesn't stick to the left when sidebar is hidden */
+.app-layout > .content-area.full.login-page {
+   flex: 1 1 auto;
+   width: 100%;
+}
+
