@@ -41,3 +41,29 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Java / backend build artifacts
+/target/
+*.jar
+*.war
+*.class
+
+# Maven wrapper and Gradle caches
+/.mvn/
+.gradle/
+
+# Environment / secrets
+.env
+.env.*
+secrets.*
+*.jks
+*.keystore
+*.pem
+*.p12
+
+# Local DB / runtime data
+/data/
+*.db
+
+# Logs
+*.log
