@@ -57,12 +57,6 @@ export const routes: Routes = [
     loadComponent: () => import('./components/usuarios/usuarios.component').then(m => m.UsuariosComponent)
   },
 
-  // Demo (public)
-  {
-    path: 'demo-mesas',
-    loadComponent: () => import('./demo/mesas-demo.component').then(m => m.MesasDemoComponent), data: { title: 'Demo Mesas' }
-  },
-
   // Wildcard - redirect to dashboard (or login will handle unauthenticated access)
   { path: '**', redirectTo: '' }
 ];
