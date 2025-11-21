@@ -2,6 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Table } from '../../models/table.model';
+import { MesasService } from '../../services/mesas.service';
+import { Mesa } from '../../models/mesa.model';
+import { ConfirmService } from '../../services/confirm.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-mesas',
@@ -148,18 +152,19 @@ import { Table } from '../../models/table.model';
           </div>
 
           <form [formGroup]="tableForm" (ngSubmit)="onSubmit()" class="modal-form">
-            <div class="form-group">
-              <label>Nombre de la Mesa *</label>
-              <input
-                type="text"
-                formControlName="name"
-                class="form-control"
-                placeholder="Ej: Mesa 1, Mesa VIP A, Terraza 3"
-              >
-              <div class="error-message" *ngIf="tableForm.get('name')?.invalid && tableForm.get('name')?.touched">
-                Nombre es requerido
+              <div class="form-group">
+                <label>Número de la Mesa *</label>
+                <input
+                  type="number"
+                  formControlName="numero"
+                  class="form-control"
+                  placeholder="Ej: 1"
+                  min="1"
+                >
+                <div class="error-message" *ngIf="tableForm.get('numero')?.invalid && tableForm.get('numero')?.touched">
+                  Número es requerido y debe ser mayor que 0
+                </div>
               </div>
-            </div>
 
             <div class="form-row">
               <div class="form-group">
@@ -223,7 +228,54 @@ import { Table } from '../../models/table.model';
       </div>
     </div>
   `,
-  styles: [``]
+  styles: [
+    `
+    /* Minimal, non-invasive modal polish - visual only, no logic changes */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.38);
+      z-index: 10000;
+      padding: 16px;
+    }
+
+    .modal-content {
+      width: 560px;
+      max-width: 100%;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+      padding: 18px;
+      color: #0f172a;
+    }
+
+    .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px }
+    .modal-header h3 { margin:0; font-size:1.05rem; font-weight:700 }
+    .modal-close { background:transparent; border:none; font-size:1.1rem; cursor:pointer }
+
+    .modal-form { display:block }
+    .form-group { margin-bottom:10px; display:flex; flex-direction:column }
+    .form-group label { margin-bottom:6px; font-weight:600; color:#0f172a }
+    .form-control { padding:8px 10px; border-radius:8px; border:1px solid #e6e9ee; font-size:0.95rem }
+    .form-row { display:flex; gap:10px }
+    .form-row .form-group { flex:1 }
+
+    .error-message { color:#dc2626; font-size:0.85rem; margin-top:6px }
+
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:8px }
+    .btn { padding:8px 12px; border-radius:8px; font-weight:600; border:none; cursor:pointer }
+    .btn-primary { background:#2563eb; color:#fff }
+    .btn-secondary { background:#f3f4f6; color:#0f172a }
+
+    @media (max-width:600px) {
+      .modal-content { width: 100%; padding:14px }
+      .form-row { flex-direction:column }
+    }
+    `
+  ]
 })
 export class MesasComponent implements OnInit {
   tables: Table[] = [];
@@ -235,9 +287,9 @@ export class MesasComponent implements OnInit {
 
   tableForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private mesasService: MesasService, private confirmService: ConfirmService, private notification: NotificationService) {
     this.tableForm = this.fb.group({
-      name: ['', Validators.required],
+      numero: [1, [Validators.required, Validators.min(1)]],
       capacity: [4, [Validators.required, Validators.min(1), Validators.max(20)]],
       location: ['', Validators.required],
       status: ['Disponible']
@@ -245,21 +297,88 @@ export class MesasComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadMockData();
-    this.filterTables();
+    this.loadTables();
+  }
+  private loadTables() {
+    this.mesasService.list().subscribe({
+      next: (list: Mesa[]) => {
+        this.tables = list.map(m => this.mapMesaToTable(m));
+        // Aplicar ubicaciones guardadas en localStorage como fallback si el backend no las devuelve
+        const stored = this.loadLocationsFromStorage();
+        this.tables = this.tables.map(t => {
+          if ((!t.location || t.location === '') && stored[t.id]) {
+            return { ...t, location: stored[t.id] } as Table;
+          }
+          return t;
+        });
+        this.filterTables();
+      },
+      error: () => {
+        // fallback to empty list on error
+        this.tables = [];
+        this.filterTables();
+      }
+    });
   }
 
-  private loadMockData() {
-    this.tables = [
-      { id: '1', name: 'Mesa 1', capacity: 4, status: 'Disponible', location: 'Interior', createdAt: new Date('2024-01-15') },
-      { id: '2', name: 'Mesa 2', capacity: 2, status: 'Ocupada', location: 'Terraza', createdAt: new Date('2024-01-15') },
-      { id: '3', name: 'Mesa 3', capacity: 6, status: 'Reservada', location: 'Interior', createdAt: new Date('2024-01-15') },
-      { id: '4', name: 'Mesa VIP A', capacity: 8, status: 'Disponible', location: 'Área VIP', createdAt: new Date('2024-01-16') },
-      { id: '5', name: 'Barra 1', capacity: 2, status: 'Ocupada', location: 'Barra', createdAt: new Date('2024-01-16') },
-      { id: '6', name: 'Terraza 1', capacity: 6, status: 'Disponible', location: 'Terraza', createdAt: new Date('2024-01-16') },
-      { id: '7', name: 'Mesa 7', capacity: 4, status: 'Mantenimiento', location: 'Interior', createdAt: new Date('2024-01-17') },
-      { id: '8', name: 'Patio 1', capacity: 10, status: 'Disponible', location: 'Patio', createdAt: new Date('2024-01-17') }
-    ];
+  private loadLocationsFromStorage(): Record<string, string> {
+    try {
+      const raw = localStorage.getItem('mesa_locations');
+      if (!raw) return {};
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('Error leyendo ubicaciones desde localStorage', e);
+      return {};
+    }
+  }
+
+  private saveLocationToStorage(mesaId: number | string, location: string) {
+    try {
+      const key = String(mesaId);
+      const cur = this.loadLocationsFromStorage();
+      if (location && location !== '') cur[key] = location;
+      else delete cur[key];
+      localStorage.setItem('mesa_locations', JSON.stringify(cur));
+    } catch (e) {
+      console.error('Error guardando ubicacion en localStorage', e);
+    }
+  }
+
+  private removeLocationFromStorage(mesaId: number | string) {
+    try {
+      const key = String(mesaId);
+      const cur = this.loadLocationsFromStorage();
+      if (cur[key]) {
+        delete cur[key];
+        localStorage.setItem('mesa_locations', JSON.stringify(cur));
+      }
+    } catch (e) {
+      console.error('Error removiendo ubicacion de localStorage', e);
+    }
+  }
+
+  private mapMesaToTable(m: Mesa): Table {
+    const numero = (m as any).numeroMesa ?? m.numero ?? null;
+    const estadoRaw = (m as any).estado ?? (m as any).estado;
+    const mapEstado = (e: any) => {
+      if (e === null || e === undefined) return 'Disponible';
+      // textual values only (backend now returns enum strings)
+      const s = String(e).toLowerCase();
+      if (s.includes('ocup')) return 'Ocupada';
+      if (s.includes('reserv')) return 'Reservada';
+      if (s.includes('manten')) return 'Mantenimiento';
+      if (s.includes('disp')) return 'Disponible';
+      return 'Disponible';
+    };
+
+    return {
+      id: String(m.mesaId),
+      name: numero ? `Mesa ${numero}` : `Mesa ${m.mesaId}`,
+      capacity: m.capacidad,
+      location: m.ubicacion ?? '',
+      status: mapEstado(estadoRaw),
+      createdAt: undefined
+    } as Table;
   }
 
   filterTables() {
@@ -280,16 +399,50 @@ export class MesasComponent implements OnInit {
 
   changeStatus(table: Table, newStatus: string) {
     const index = this.tables.findIndex(t => t.id === table.id);
-    if (index !== -1) {
-      this.tables[index].status = newStatus as any;
-      this.filterTables();
-    }
+    if (index === -1) return;
+
+    const previous = this.tables[index].status;
+    // optimistic update
+    this.tables[index].status = newStatus as any;
+    this.filterTables();
+
+    const mesaId = Number(table.id);
+    const parsedNum = Number(String(table.name || '').replace(/[^0-9]/g, '')) || 1;
+    const mapStatusToEstadoEnum = (s: string) => {
+      switch ((s || '').toLowerCase()) {
+        case 'ocupada': return 'OCUPADA';
+        case 'reservada': return 'RESERVADA';
+        case 'mantenimiento': return 'MANTENIMIENTO';
+        default: return 'DISPONIBLE';
+      }
+    };
+    const estado = mapStatusToEstadoEnum(newStatus);
+    const dto: any = {
+      numero: parsedNum,
+      numeroMesa: parsedNum,
+      'numero_mesa': parsedNum,
+      capacidad: table.capacity,
+      ubicacion: table.location ?? '',
+      activo: newStatus !== 'Mantenimiento',
+      estado
+    };
+    this.mesasService.update(mesaId, dto).subscribe({
+      next: () => {
+        this.notification.show('Estado de la mesa actualizado', 'success', 3000, 'bottom-right');
+      },
+      error: () => {
+        // revert
+        this.tables[index].status = previous;
+        this.filterTables();
+        this.notification.show('No se pudo actualizar el estado de la mesa', 'error');
+      }
+    });
   }
 
   openModal() {
     this.showModal = true;
     this.editingTable = null;
-    this.tableForm.reset({ capacity: 4, status: 'Disponible' });
+    this.tableForm.reset({ numero: 1, capacity: 4, status: 'Disponible' });
   }
 
   closeModal() {
@@ -301,8 +454,9 @@ export class MesasComponent implements OnInit {
     this.editingTable = table;
     this.showModal = true;
 
+    const parsedNum = Number(String(table.name || '').replace(/[^0-9]/g, '')) || 1;
     this.tableForm.patchValue({
-      name: table.name,
+      numero: parsedNum,
       capacity: table.capacity,
       location: table.location,
       status: table.status
@@ -310,10 +464,68 @@ export class MesasComponent implements OnInit {
   }
 
   deleteTable(id: string) {
-    if (confirm('¿Está seguro de eliminar esta mesa? Esta acción no se puede deshacer.')) {
-      this.tables = this.tables.filter(t => t.id !== id);
-      this.filterTables();
-    }
+    this.confirmService.confirm({
+      title: 'Eliminar mesa',
+      message: '¿Está seguro de eliminar esta mesa? Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      cancelLabel: 'Cancelar'
+    }).then(confirmed => {
+      if (!confirmed) return;
+      const mesaId = Number(id);
+      this.mesasService.delete(mesaId).subscribe({
+        next: () => {
+          this.tables = this.tables.filter(t => t.id !== id);
+          this.filterTables();
+          // Remover fallback de localStorage
+          this.removeLocationFromStorage(id);
+          this.notification.show('Mesa eliminada correctamente', 'success', 4000, 'bottom-right');
+        },
+        error: (err: any) => {
+          // Intentar obtener el mensaje de error devuelto por el backend
+          let fullReason = 'No se pudo eliminar la mesa.';
+          try {
+            if (err && err.error) {
+              if (typeof err.error === 'string') {
+                fullReason = `No se pudo eliminar la mesa: ${err.error}`;
+              } else {
+                const body = err.error;
+                const msg = body.mensaje ?? body.message ?? null;
+                if (msg) fullReason = `No se pudo eliminar la mesa: ${msg}`;
+                else fullReason = `No se pudo eliminar la mesa: ${JSON.stringify(body)}`;
+              }
+            } else if (err && err.message) {
+              fullReason = `No se pudo eliminar la mesa: ${err.message}`;
+            }
+          } catch (e) {
+            fullReason = 'No se pudo eliminar la mesa.';
+            console.error('Error parsing delete error response', e, err);
+          }
+
+          // Generar un mensaje compacto y no redundante para mostrar al usuario
+          let concise = 'No se pudo eliminar la mesa.';
+          try {
+            const lower = String(fullReason).toLowerCase();
+            // Si el backend indica cantidad de reservas, extraer el número
+            const m = lower.match(/tiene\s+(\d+)\s+reserv/);
+            if (m && m[1]) {
+              const n = Number(m[1]);
+              concise = `No se pudo eliminar: tiene ${n} reserva${n > 1 ? 's' : ''} activa${n > 1 ? 's' : ''} asociada${n > 1 ? 's' : ''}.`;
+            } else if (lower.includes('reserv')) {
+              concise = 'No se pudo eliminar: tiene reservas activas o futuras asociadas.';
+            } else if (lower.includes('no se puede eliminar')) {
+              // Usar la frase corta que ya usa el backend
+              concise = 'No se pudo eliminar la mesa: tiene reservas activas o futuras.';
+            }
+          } catch (e) {
+            concise = 'No se pudo eliminar la mesa.';
+          }
+
+          // Guardar detalle completo en consola para depuración, pero mostrar solo el mensaje compacto
+          console.error('Detalle completo al intentar eliminar mesa:', err, fullReason);
+          this.notification.show(concise, 'error');
+        }
+      });
+    }).catch(() => { this.notification.show('Error en confirmación', 'error'); });
   }
 
   onSubmit() {
@@ -321,15 +533,59 @@ export class MesasComponent implements OnInit {
       const formData = this.tableForm.value;
 
       if (this.editingTable) {
-        const index = this.tables.findIndex(t => t.id === this.editingTable!.id);
-        this.tables[index] = { ...this.editingTable, ...formData } as Table;
+        const mesaId = Number(this.editingTable!.id);
+        const mapStatusToEstadoEnum = (s: string) => {
+          switch ((s || '').toLowerCase()) {
+            case 'ocupada': return 'OCUPADA';
+            case 'reservada': return 'RESERVADA';
+            case 'mantenimiento': return 'MANTENIMIENTO';
+            default: return 'DISPONIBLE';
+          }
+        };
+        const estado = mapStatusToEstadoEnum(formData.status);
+        const ubicacionVal = formData.location || this.editingTable?.location || '';
+        const payload: any = { numero: Number(formData.numero), numeroMesa: Number(formData.numero), 'numero_mesa': Number(formData.numero), capacidad: formData.capacity, ubicacion: ubicacionVal, activo: formData.status !== 'Mantenimiento', estado };
+        this.mesasService.update(mesaId, payload).subscribe({
+          next: (res: Mesa) => {
+            // Si el backend no devuelve ubicacion, usar el valor del formulario
+            const updated = this.mapMesaToTable(res);
+            if (!updated.location || updated.location === '') {
+              updated.location = formData.location || this.editingTable?.location || '';
+            }
+            // Reemplazar en la lista local
+            const idx = this.tables.findIndex(t => t.id === String(mesaId));
+            if (idx !== -1) this.tables[idx] = updated;
+              // Guardar ubicación en localStorage como fallback
+              this.saveLocationToStorage(mesaId, updated.location || '');
+            this.filterTables();
+            this.closeModal();
+            this.notification.show('Mesa actualizada correctamente', 'success', 3000, 'bottom-right');
+          },
+          error: () => { this.notification.show('Error actualizando mesa', 'error'); }
+        });
       } else {
-        const newTable: Table = { id: Date.now().toString(), ...formData, createdAt: new Date() };
-        this.tables.push(newTable);
+        const ubicacionVal = formData.location || '';
+        const payload: any = { numero: Number(formData.numero), numeroMesa: Number(formData.numero), 'numero_mesa': Number(formData.numero), capacidad: formData.capacity, ubicacion: ubicacionVal, estado: 'DISPONIBLE' };
+        this.mesasService.create(payload).subscribe({
+          next: (res: Mesa) => {
+            // Mapear respuesta; si backend no devuelve ubicacion, usar la del formulario
+            const created = this.mapMesaToTable(res);
+            if (!created.location || created.location === '') {
+              created.location = formData.location || '';
+            }
+            // Añadir a lista local (no recargamos para evitar perder la ubicación si backend no la persiste)
+              this.tables.push(created);
+              // Guardar fallback en localStorage para persistir en reloads locales
+              this.saveLocationToStorage(res.mesaId ?? created.id, created.location || '');
+            this.filterTables();
+            this.closeModal();
+            this.notification.show('Mesa creada correctamente', 'success', 3000, 'bottom-right');
+          },
+          error: () => { this.notification.show('Error creando mesa', 'error'); }
+        });
       }
 
-      this.filterTables();
-      this.closeModal();
+      // filter/close handled in callbacks
     }
   }
 
