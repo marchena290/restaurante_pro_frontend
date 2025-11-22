@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Client, CreateClientRequest } from '../../models/client.model';
 import { ClientesService } from '../../services/clientes.service';
+import { ReservacionesService } from '../../services/reservaciones.service';
 import { Cliente as ClienteApi, CreateClienteDto, UpdateClienteDto } from '../../models/cliente.model';
 import { ConfirmService } from '../../services/confirm.service';
 import { NotificationService } from '../../services/notification.service';
@@ -226,7 +227,7 @@ export class ClientesComponent implements OnInit {
 
   clientForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private clientesService: ClientesService, private confirmService: ConfirmService, private notification: NotificationService) {
+  constructor(private fb: FormBuilder, private clientesService: ClientesService, private reservasService: ReservacionesService, private confirmService: ConfirmService, private notification: NotificationService) {
     this.clientForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -243,18 +244,60 @@ export class ClientesComponent implements OnInit {
     this.clientesService.list().subscribe({
       next: (list: ClienteApi[]) => {
         // Map API Cliente -> view Client
-        this.clients = list.map(c => ({
-          id: String(c.clienteId),
-          name: `${c.nombre}${c.apellido ? ' ' + c.apellido : ''}`.trim(),
-          email: c.email ?? '',
-          phone: c.telefono ?? '',
-          // backend may return 'direccion' or older 'nota' field — prefer 'direccion'
-          address: (c as any).direccion ?? c.nota ?? '',
-          createdAt: undefined,
-          totalReservations: 0
-        } as Client));
-        this.filterClients();
-        this.isLoading = false;
+        this.clients = list.map(c => {
+          const anyc = c as any;
+          // detect createdAt-like fields from backend
+          const createdRaw = anyc.createdAt ?? anyc.fechaRegistro ?? anyc.creadoEn ?? anyc.creado_at ?? anyc.fecha_creacion ?? anyc.fechaAlta ?? anyc.created_at;
+          const createdAt = createdRaw ? new Date(createdRaw) : undefined;
+
+          // detect total reservations field from backend using multiple possible names
+          const totalRaw = anyc.totalReservations ?? anyc.totalReservas ?? anyc.reservasCount ?? anyc.reservas_totales ?? anyc.total_reservas ?? anyc.total ?? anyc.cantidadReservas;
+          const totalReservations = typeof totalRaw === 'number' ? totalRaw : (typeof totalRaw === 'string' && totalRaw.trim() !== '' ? Number(totalRaw) : 0);
+
+          return ({
+            id: String(c.clienteId),
+            name: `${c.nombre}${c.apellido ? ' ' + c.apellido : ''}`.trim(),
+            email: c.email ?? '',
+            phone: c.telefono ?? '',
+            // backend may return 'direccion' or older 'nota' field — prefer 'direccion'
+            address: anyc.direccion ?? anyc.nota ?? '',
+            createdAt: createdAt,
+            totalReservations: totalReservations
+          } as Client);
+        });
+        // After loading clients, fetch reservations to compute total per client (client-side fallback)
+        this.reservasService.list().subscribe({
+          next: reservas => {
+            try {
+              const counts: Record<string, number> = {};
+              const earliest: Record<string, number> = {};
+              (reservas || []).forEach((r: any) => {
+                const cid = r.clienteId ?? (r.cliente && (r.cliente.clienteId ?? r.cliente.id));
+                if (!cid) return;
+                const key = String(cid);
+                counts[key] = (counts[key] || 0) + 1;
+                // parse fechaHoraInicio if present to compute earliest
+                const fecha = r.fechaHoraInicio ?? r.fechaReserva ?? r.fecha ?? null;
+                if (fecha) {
+                  const ts = Date.parse(fecha);
+                  if (!Number.isNaN(ts)) {
+                    if (!earliest[key] || ts < earliest[key]) earliest[key] = ts;
+                  }
+                }
+              });
+
+              this.clients = this.clients.map(c => {
+                const created = c.createdAt || (earliest[c.id] ? new Date(earliest[c.id]) : undefined);
+                return ({ ...c, totalReservations: counts[c.id] || 0, createdAt: created });
+              });
+            } catch (e) {
+              console.error('Error computing client reservation counts/dates', e);
+            }
+            this.filterClients();
+            this.isLoading = false;
+          },
+          error: () => { this.filterClients(); this.isLoading = false; }
+        });
       },
       error: () => {
         this.isLoading = false;

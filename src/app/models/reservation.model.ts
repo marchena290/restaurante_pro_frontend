@@ -10,6 +10,8 @@ export interface Reservation {
   time: string; // HH:mm
   guests: number;
   status: 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Completada' | string;
+  // CSS-safe class token derived from the technical estado (e.g. 'pendiente', 'confirmada', 'en-curso')
+  statusClass?: string;
   notes?: string;
   createdAt?: Date;
 }

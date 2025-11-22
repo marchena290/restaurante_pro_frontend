@@ -8,6 +8,7 @@ import { ReservacionesService } from '../../services/reservaciones.service';
 import { ClientesService } from '../../services/clientes.service';
 import { MesasService } from '../../services/mesas.service';
 import { NotificationService } from '../../services/notification.service';
+import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
 import { ConfirmService } from '../../services/confirm.service';
 import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reservacion.model';
 
@@ -78,7 +79,7 @@ import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reserv
                 <span class="guest-count">{{ reservation.guests }}</span>
               </td>
               <td>
-                <span class="status-badge" [class]="'status-' + reservation.status.toLowerCase()">
+                <span class="status-badge" [class]="'status-' + (reservation.statusClass || 'pendiente')">
                   {{ reservation.status }}
                 </span>
               </td>
@@ -525,6 +526,18 @@ export class ReservacionesComponent implements OnInit {
     const guests = (r as any).cantidadPersonas ?? (r.duracionMinutos ? 1 : 1);
 
     const statusLabel = this.mapEstadoToLabel(r.estado ?? 'PENDIENTE');
+    const estadoRaw = (r.estado ?? 'PENDIENTE').toString().toUpperCase();
+    const statusClass = ((): string => {
+      switch (estadoRaw) {
+        case 'PENDIENTE': return 'pendiente';
+        case 'CONFIRMADO':
+        case 'CONFIRMADA': return 'confirmada';
+        case 'EN_CURSO': return 'en-curso';
+        case 'FINALIZADA': return 'finalizada';
+        case 'CANCELADA': return 'cancelada';
+        default: return estadoRaw.toLowerCase().replace(/\s+/g,'-');
+      }
+    })();
 
     // Map table name if we have it in availableTables
     // Defensive table id/name extraction: backend may return nested `mesa` object
@@ -604,6 +617,7 @@ export class ReservacionesComponent implements OnInit {
       time: time,
       guests: Number(guests),
       status: statusLabel,
+      statusClass: statusClass,
       notes: r.nota ?? '',
       createdAt: undefined
     } as Reservation;
@@ -638,16 +652,7 @@ export class ReservacionesComponent implements OnInit {
 
   private mapEstadoToLabel(estado: string): string {
     if (!estado) return 'Pendiente';
-    const e = estado.toUpperCase();
-    switch (e) {
-      case 'PENDIENTE': return 'Pendiente';
-      case 'CONFIRMADO': return 'Confirmada';
-      case 'CANCELADA': return 'Cancelada';
-      case 'FINALIZADA': return 'Completada';
-      case 'EN_CURSO': return 'Confirmada';
-      case 'NO_SHOW': return 'Cancelada';
-      default: return estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-    }
+    return humanizeEstadoReserva(estado);
   }
 
   private mapStatusLabelToEstado(label: string): string {

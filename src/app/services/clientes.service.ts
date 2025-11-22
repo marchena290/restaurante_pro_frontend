@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Cliente, CreateClienteDto, UpdateClienteDto } from '../models/cliente.model';
 
@@ -11,7 +12,13 @@ export class ClientesService {
   constructor(private http: HttpClient) {}
 
   list(): Observable<Cliente[]> {
-    return this.http.get<Cliente[]>(this.baseUrl);
+    // Some backends return a wrapper { value: [...], Count: n }
+    return this.http.get<any>(this.baseUrl).pipe(
+      map(res => {
+        if (!res) return [];
+        return (res.value && Array.isArray(res.value)) ? res.value : (Array.isArray(res) ? res : []);
+      })
+    );
   }
 
   get(clienteId: number | string): Observable<Cliente> {

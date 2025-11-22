@@ -4,8 +4,11 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Table } from '../../models/table.model';
 import { MesasService } from '../../services/mesas.service';
 import { Mesa } from '../../models/mesa.model';
+import { ReservacionesService } from '../../services/reservaciones.service';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { NotificationService } from '../../services/notification.service';
+import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
 
 @Component({
   selector: 'app-mesas',
@@ -81,6 +84,10 @@ import { NotificationService } from '../../services/notification.service';
               <span class="detail-icon">📅</span>
               <span class="detail-text">{{ formatDate(table.createdAt) }}</span>
             </div>
+            <div class="detail-item" *ngIf="nextReservations[table.id]">
+              <span class="detail-icon">⏰</span>
+              <span class="detail-text">Próx.: {{ nextReservations[table.id] }}</span>
+            </div>
           </div>
 
           <div class="table-status">
@@ -94,6 +101,9 @@ import { NotificationService } from '../../services/notification.service';
             </button>
             <button class="quick-action-btn reserved" (click)="changeStatus(table, 'Reservada')">
               Marcar Reservada
+            </button>
+            <button class="quick-action-btn checkin" *ngIf="canCheckIn && nextReservations[table.id]" (click)="checkInFromTable(table)">
+              Check‑in
             </button>
           </div>
 
@@ -287,7 +297,17 @@ export class MesasComponent implements OnInit {
 
   tableForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private mesasService: MesasService, private confirmService: ConfirmService, private notification: NotificationService) {
+  // map of tableId -> formatted next reservation label
+  nextReservations: Record<string, string> = {};
+  // map of tableId -> reservation object (raw) for quick access
+  nextReservationInfo: Record<string, any> = {};
+
+  constructor(private fb: FormBuilder,
+              private mesasService: MesasService,
+              private confirmService: ConfirmService,
+              private notification: NotificationService,
+              private reservasService: ReservacionesService,
+              private auth: AuthService) {
     this.tableForm = this.fb.group({
       numero: [1, [Validators.required, Validators.min(1)]],
       capacity: [4, [Validators.required, Validators.min(1), Validators.max(20)]],
@@ -312,6 +332,8 @@ export class MesasComponent implements OnInit {
           return t;
         });
         this.filterTables();
+        // load next reservations for tables
+        this.loadNextReservations();
       },
       error: () => {
         // fallback to empty list on error
@@ -319,6 +341,90 @@ export class MesasComponent implements OnInit {
         this.filterTables();
       }
     });
+  }
+
+  private loadNextReservations() {
+    this.reservasService.list().subscribe({
+      next: (reservas: any[]) => {
+        try {
+          const now = Date.now();
+          // group reservations by mesaId and pick the next upcoming (fechaHoraInicio >= now)
+          const byTable: Record<string, any[]> = {};
+          reservas.forEach(r => {
+            // mesaId can be numeric or an object like { mesaId: 9, numeroMesa: 10 }
+            let mid = '';
+            try {
+              if (r === null || r === undefined) return;
+              if (typeof r.mesaId === 'number' || typeof r.mesaId === 'string') mid = String(r.mesaId);
+              else if (r.mesaId && typeof r.mesaId === 'object' && (r.mesaId.mesaId || r.mesaId.mesaId === 0)) mid = String(r.mesaId.mesaId);
+              else if (r.mesa && typeof r.mesa === 'object' && (r.mesa.mesaId || r.mesa.mesaId === 0)) mid = String(r.mesa.mesaId);
+            } catch (e) {
+              mid = '';
+            }
+            if (!mid) return;
+            // skip cancelled
+            const estado = (r.estado || '').toString().toLowerCase();
+            if (estado.includes('cancel') || estado.includes('cancelada')) return;
+            const ts = r.fechaHoraInicio ? Date.parse(r.fechaHoraInicio) : 0;
+            if (!byTable[mid]) byTable[mid] = [];
+            byTable[mid].push({ ...r, ts });
+          });
+
+          Object.keys(byTable).forEach(tid => {
+            const list = byTable[tid].filter(x => x.ts >= now).sort((a,b) => a.ts - b.ts);
+            if (list.length) {
+              const next = list[0];
+              this.nextReservations[tid] = new Date(next.ts).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+              this.nextReservationInfo[tid] = next;
+            } else {
+              delete this.nextReservations[tid];
+              delete this.nextReservationInfo[tid];
+            }
+          });
+        } catch (e) {
+          console.warn('Error computing next reservations', e);
+        }
+      },
+      error: () => { /* ignore */ }
+    });
+  }
+
+  get canCheckIn(): boolean {
+    return this.auth.hasRole('ADMIN') || this.auth.hasRole('EMPLEADO');
+  }
+
+  checkInFromTable(table: Table) {
+    // mark mesa as ocupada and optionally set reservation to EN_CURSO
+    const mesaId = Number(table.id);
+    // optimistic UI
+    const prevStatus = table.status;
+    table.status = 'Ocupada';
+    this.filterTables();
+
+    this.changeStatus(table, 'Ocupada');
+
+    // if there is a next reservation, attempt to set it EN_CURSO
+    const info = this.nextReservationInfo[table.id];
+    if (info && info.reservaId) {
+      try {
+        this.reservasService.changeEstado(info.reservaId, { estado: 'EN_CURSO' }).subscribe({
+          next: (updatedReserva: any) => {
+            const title = humanizeEstadoReserva(updatedReserva?.estado) || 'Reserva actualizada';
+            this.notification.show(title, 'success');
+            // refresh reservations map
+            this.loadNextReservations();
+          },
+          error: (err: any) => {
+            // Prefer server message when available
+            const serverMsg = err && err.error && (err.error.mensaje || err.error.message);
+            const message = serverMsg || 'No se pudo actualizar la reserva';
+            this.notification.show(message, 'error');
+          }
+        });
+      } catch (e) {
+        console.warn('checkInFromTable reservation update failed', e);
+      }
+    }
   }
 
   private loadLocationsFromStorage(): Record<string, string> {
