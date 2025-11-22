@@ -4,6 +4,12 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Reservation } from '../../models/reservation.model';
 import { Client } from '../../models/client.model';
 import { Table } from '../../models/table.model';
+import { ReservacionesService } from '../../services/reservaciones.service';
+import { ClientesService } from '../../services/clientes.service';
+import { MesasService } from '../../services/mesas.service';
+import { NotificationService } from '../../services/notification.service';
+import { ConfirmService } from '../../services/confirm.service';
+import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reservacion.model';
 
 @Component({
   selector: 'app-reservaciones',
@@ -217,7 +223,74 @@ import { Table } from '../../models/table.model';
       </div>
     </div>
   `,
-  styles: [``]
+  styles: [
+    `
+    /* Modal overlay and content */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 820px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+      animation: modalEnter .12s ease-out;
+    }
+
+    @keyframes modalEnter { from { transform: translateY(6px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+      background: linear-gradient(90deg, #f7f9fc, #ffffff);
+    }
+
+    .modal-header h3 { margin: 0; font-size: 18px; color: #222; }
+    .modal-close { background: transparent; border: none; font-size: 18px; cursor: pointer }
+
+    .modal-form { padding: 18px 20px; display: grid; gap: 12px }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+    .form-group { display: flex; flex-direction: column }
+    .form-group label { font-size: 13px; margin-bottom: 6px; color: #333 }
+
+    .form-control { padding: 8px 10px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px }
+    select.form-control { background: white }
+
+    .error-message { color: #b00020; font-size: 12px; margin-top: 6px }
+
+    .modal-actions { display:flex; gap: 10px; justify-content: flex-end; padding: 12px 20px 20px }
+
+    .btn { padding: 8px 12px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600 }
+    .btn-primary { background: #007bff; color: white }
+    .btn-secondary { background: #f4f6f8; color: #222; border-color: #e6e9ee }
+
+    /* Small screens */
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr }
+      .modal-content { max-width: 95%; }
+      .modal-actions { padding: 12px }
+    }
+
+    /* minor improvements for table/overview */
+    .data-table { width: 100%; border-collapse: collapse }
+    .data-table th, .data-table td { padding: 10px 8px; border-bottom: 1px solid #f0f0f0 }
+    .status-badge { padding: 6px 8px; border-radius: 999px; font-size: 13px }
+    `
+  ]
 })
 export class ReservacionesComponent implements OnInit {
   reservations: Reservation[] = [];
@@ -232,7 +305,14 @@ export class ReservacionesComponent implements OnInit {
 
   reservationForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private reservasService: ReservacionesService,
+    private clientesService: ClientesService,
+    private mesasService: MesasService,
+    private notification: NotificationService,
+    private confirm: ConfirmService
+  ) {
     this.reservationForm = this.fb.group({
       clientId: ['', Validators.required],
       tableId: ['', Validators.required],
@@ -245,27 +325,53 @@ export class ReservacionesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadMockData();
-    this.filterReservations();
+    this.loadData();
   }
+  private loadData() {
+    // load clients and tables in parallel, then reservations
+    this.clientesService.list().subscribe({
+      next: clients => {
+        // defensive mapping in case backend uses different field names
+        this.clients = (clients as any[]).map(c => ({
+          id: String((c as any).id ?? (c as any).clientedId ?? (c as any).clienteId ?? ''),
+          name: (c as any).name ?? (c as any).nombre ?? '',
+          email: (c as any).email ?? null,
+          phone: (c as any).phone ?? (c as any).telefono ?? '',
+          address: (c as any).address ?? (c as any).direccion ?? null,
+          createdAt: (c as any).createdAt ? new Date((c as any).createdAt) : undefined,
+          totalReservations: (c as any).totalReservations ?? undefined
+        } as Client));
+      },
+      error: err => { console.error('Error cargando clientes', err); this.notification.show('No se pudieron cargar clientes', 'error'); }
+    });
 
-  private loadMockData() {
-    this.clients = [
-      { id: '1', name: 'Juan Pérez', email: 'juan@email.com', phone: '555-0101', createdAt: new Date(), totalReservations: 5 },
-      { id: '2', name: 'María García', email: 'maria@email.com', phone: '555-0102', createdAt: new Date(), totalReservations: 3 },
-      { id: '3', name: 'Carlos López', email: 'carlos@email.com', phone: '555-0103', createdAt: new Date(), totalReservations: 7 }
-    ];
+    this.mesasService.list().subscribe({
+      next: mesas => {
+        this.availableTables = (mesas as any[]).map(m => ({
+          id: String((m as any).id ?? (m as any).mesaId ?? ''),
+          // prefer explicit numeroMesa (backend uses `numeroMesa`), fall back to mesaId
+          name: ((): string => {
+            const numero = (m as any).numeroMesa ?? (m as any).numneroMesa ?? (m as any).numero ?? undefined;
+            if (numero !== undefined && numero !== null && numero !== '') return `Mesa ${String(numero)}`;
+            return String((m as any).name ?? `Mesa ${(m as any).mesaId ?? ''}`);
+          })(),
+          capacity: (m as any).capacity ?? (m as any).capacidad ?? 0,
+          status: (m as any).status ?? (m as any).estado ?? 'Disponible',
+          location: (m as any).location ?? (m as any).ubicacion ?? '',
+          createdAt: (m as any).createdAt ? new Date((m as any).createdAt) : undefined
+        } as Table));
+      },
+      error: err => { console.error('Error cargando mesas', err); this.notification.show('No se pudieron cargar mesas', 'error'); }
+    });
 
-    this.availableTables = [
-      { id: '1', name: 'Mesa 1', capacity: 4, status: 'Disponible', location: 'Terraza', createdAt: new Date() },
-      { id: '2', name: 'Mesa 2', capacity: 2, status: 'Disponible', location: 'Interior', createdAt: new Date() },
-      { id: '3', name: 'Mesa 3', capacity: 6, status: 'Disponible', location: 'Interior', createdAt: new Date() }
-    ];
-
-    this.reservations = [
-      { id: '1', clientId: '1', clientName: 'Juan Pérez', clientEmail: 'juan@email.com', clientPhone: '555-0101', tableId: '1', tableName: 'Mesa 1', date: '2025-01-15', time: '19:00', guests: 4, status: 'Confirmada', notes: 'Celebración de cumpleaños', createdAt: new Date() },
-      { id: '2', clientId: '2', clientName: 'María García', clientEmail: 'maria@email.com', clientPhone: '555-0102', tableId: '2', tableName: 'Mesa 2', date: '2025-01-16', time: '20:30', guests: 2, status: 'Pendiente', createdAt: new Date() }
-    ];
+    this.reservasService.list().subscribe({
+      next: reservas => {
+        // map backend Reserva -> Reservation (frontend shape)
+        this.reservations = reservas.map(r => this.mapReservaToReservation(r));
+        this.filterReservations();
+      },
+      error: err => { console.error('Error cargando reservaciones', err); this.notification.show('No se pudieron cargar reservaciones', 'error'); }
+    });
   }
 
   filterReservations() {
@@ -285,11 +391,17 @@ export class ReservacionesComponent implements OnInit {
     this.showModal = true;
     this.editingReservation = null;
     this.reservationForm.reset({ guests: 2, status: 'Pendiente' });
+    // Ensure client selector is enabled when creating
+    const clientControl = this.reservationForm.get('clientId');
+    if (clientControl && clientControl.disabled) clientControl.enable();
   }
 
   closeModal() {
     this.showModal = false;
     this.editingReservation = null;
+    // Re-enable client selector when closing modal
+    const clientControl = this.reservationForm.get('clientId');
+    if (clientControl && clientControl.disabled) clientControl.enable();
   }
 
   editReservation(reservation: Reservation) {
@@ -305,46 +417,248 @@ export class ReservacionesComponent implements OnInit {
       status: reservation.status,
       notes: reservation.notes
     });
+    // When editing, prevent changing the client: disable the client selector
+    const clientControl = this.reservationForm.get('clientId');
+    if (clientControl && clientControl.enabled) clientControl.disable();
   }
 
   deleteReservation(id: string) {
-    if (confirm('¿Está seguro de eliminar esta reservación?')) {
-      this.reservations = this.reservations.filter(r => r.id !== id);
-      this.filterReservations();
-    }
+    this.confirm.confirm({ title: 'Eliminar reservación', message: '¿Está seguro de eliminar esta reservación?' }).then(ok => {
+      if (!ok) return;
+      // call backend
+      this.reservasService.delete(Number(id)).subscribe({
+        next: () => {
+          this.reservations = this.reservations.filter(r => r.id !== id);
+          this.filterReservations();
+          this.notification.show('Reservación eliminada', 'success');
+        },
+        error: err => {
+            console.error('Error eliminando reservación', err);
+            // Detect server-side forbidden (403) for confirmed reservations and show a friendly toast.
+            let msg = 'Error al eliminar reservación';
+            try {
+              if (err && err.status === 403) {
+                // err.error can be a string or an object with message
+                if (err.error) {
+                  msg = typeof err.error === 'string' ? err.error : (err.error.message ?? 'No se puede eliminar una reserva confirmada.');
+                } else {
+                  msg = 'No se puede eliminar una reserva confirmada.';
+                }
+              } else {
+                msg = err?.error?.message ?? (typeof err?.error === 'string' ? err.error : err?.message) ?? msg;
+              }
+            } catch (e) {
+              console.error('Error parsing deletion error', e);
+            }
+            this.notification.show(String(msg).substring(0, 140), 'error');
+        }
+      });
+    });
   }
 
   onSubmit() {
-    if (this.reservationForm.valid) {
-      const formData = this.reservationForm.value;
-      const selectedClient = this.clients.find(c => c.id === formData.clientId);
-      const selectedTable = this.availableTables.find(t => t.id === formData.tableId);
+    if (!this.reservationForm.valid) return;
 
-      if (this.editingReservation) {
-        const index = this.reservations.findIndex(r => r.id === this.editingReservation!.id);
-        this.reservations[index] = {
-          ...this.editingReservation,
-          ...formData,
-          clientName: selectedClient?.name || '',
-          clientEmail: selectedClient?.email || '',
-          clientPhone: selectedClient?.phone || '',
-          tableName: selectedTable?.name || ''
-        } as Reservation;
-      } else {
-        const newReservation: Reservation = {
-          id: Date.now().toString(),
-          ...formData,
-          clientName: selectedClient?.name || '',
-          clientEmail: selectedClient?.email || '',
-          clientPhone: selectedClient?.phone || '',
-          tableName: selectedTable?.name || '',
-          createdAt: new Date()
-        } as Reservation;
-        this.reservations.push(newReservation);
+    const formData = this.reservationForm.value;
+
+    const dtoCreate: any = {
+      clienteId: Number(formData.clientId),
+      mesaId: Number(formData.tableId),
+      fechaHoraInicio: `${formData.date}T${formData.time}:00`,
+      duracionMinutos: 60,
+      cantidadPersonas: Number(formData.guests),
+      nota: formData.notes || '',
+      estado: this.mapStatusLabelToEstado(formData.status ?? 'Pendiente')
+    } as CreateReservaDto;
+
+    if (this.editingReservation) {
+      const dtoUpdate: UpdateReservaDto = {
+        mesaId: Number(formData.tableId),
+        fechaHoraInicio: `${formData.date}T${formData.time}:00`,
+        duracionMinutos: 60,
+        cantidadPersonas: Number(formData.guests),
+        nota: formData.notes || '',
+        estado: this.mapStatusLabelToEstado(formData.status)
+      };
+
+      this.reservasService.update(Number(this.editingReservation.id), dtoUpdate).subscribe({
+        next: updated => {
+          const idx = this.reservations.findIndex(r => r.id === this.editingReservation!.id);
+          if (idx !== -1) this.reservations[idx] = this.mapReservaToReservation(updated as Reserva);
+          this.filterReservations();
+          this.closeModal();
+          this.notification.show('Reservación actualizada', 'success');
+        },
+        error: err => {
+          console.error('Error actualizando reservación', err);
+          const msg = err?.error?.message || err?.message || 'Error actualizando reservación';
+          this.notification.show(msg.substring(0, 140), 'error');
+        }
+      });
+    } else {
+      this.reservasService.create(dtoCreate).subscribe({
+        next: created => {
+          this.reservations.unshift(this.mapReservaToReservation(created as Reserva));
+          this.filterReservations();
+          this.closeModal();
+          this.notification.show('Reservación creada', 'success');
+        },
+        error: err => {
+          console.error('Error creando reservación', err);
+          const msg = err?.error?.message || err?.message || 'Error creando reservación';
+          this.notification.show(msg.substring(0, 140), 'error');
+        }
+      });
+    }
+  }
+
+  private mapReservaToReservation(r: Reserva): Reservation {
+    // (debug removed)
+    const dt = new Date(r.fechaHoraInicio);
+    const date = dt.toISOString().split('T')[0];
+    const time = dt.toTimeString().slice(0,5);
+
+    // Cliente: preferir campos planos devueltos por ReservaResponseDto (clienteId/clienteNombre/clienteEmail/clientePhone)
+    const clientId = (r as any).clienteId ? String((r as any).clienteId) : (r.cliente ? String((r.cliente as any).clienteId ?? (r.cliente as any).clientedId ?? (r.cliente as any).clienteId ?? '') : '');
+    const clientName = (r as any).clienteNombre ?? ((r.cliente && ((r.cliente as any).nombre ?? (r.cliente as any).name)) || '');
+
+    const guests = (r as any).cantidadPersonas ?? (r.duracionMinutos ? 1 : 1);
+
+    const statusLabel = this.mapEstadoToLabel(r.estado ?? 'PENDIENTE');
+
+    // Map table name if we have it in availableTables
+    // Defensive table id/name extraction: backend may return nested `mesa` object
+    let tableId = '';
+    if (r.mesaId && (typeof r.mesaId === 'string' || typeof r.mesaId === 'number')) {
+      tableId = String(r.mesaId);
+    } else if ((r as any).mesa && (((r as any).mesa as any).id || ((r as any).mesa as any).mesaId)) {
+      tableId = String(((r as any).mesa as any).id ?? ((r as any).mesa as any).mesaId);
+    } else {
+      tableId = String((r as any).mesaId ?? '');
+    }
+
+    const tableObj = this.availableTables.find(t => t.id === tableId);
+
+    // Prefer mesa object number (many possible shapes), then availableTables lookup, then fallbacks
+    let tableName = '';
+
+    const tryExtract = (v: any): string | null => {
+      const s = this.extractString(v);
+      return s && String(s).trim() ? String(s).trim() : null;
+    };
+
+    // Candidates to extract a mesa number/label from the reserva object
+    const candidates = [
+      (r as any).numeroMesa,
+      (r as any).mesaNumero,
+      (r as any).mesaId?.numeroMesa,
+      (r as any).mesa?.numeroMesa,
+      (r as any).mesa?.numneroMesa,
+      (r as any).mesa?.numero,
+      (r as any).mesa?.number,
+      (r as any).mesaId?.mesaId,
+      (r as any).mesa?.mesaId,
+      (r as any).mesa?.id
+    ];
+
+    for (const c of candidates) {
+      const s = tryExtract(c);
+      if (s) {
+        tableName = `Mesa ${s}`;
+        break;
       }
+    }
 
-      this.filterReservations();
-      this.closeModal();
+    // If not found via candidates, try to use availableTables lookup
+    if (!tableName && tableObj) {
+      const nameFromTable = tryExtract((tableObj as any).name) || tryExtract((tableObj as any).numero) || tryExtract((tableObj as any).id);
+      if (nameFromTable) {
+        // If the available table name already contains 'Mesa', keep it; otherwise prefix
+        tableName = nameFromTable.toLowerCase().includes('mesa') ? nameFromTable : `Mesa ${nameFromTable}`;
+      }
+    }
+
+    // As last resort, if r.mesa exists and is an object, try to extract any readable string from it
+    if (!tableName && (r as any).mesa) {
+      const fallback = tryExtract((r as any).mesa);
+      if (fallback) {
+        tableName = fallback.toLowerCase().includes('mesa') ? fallback : `Mesa ${fallback}`;
+      }
+    }
+
+    if (!tableName && tableId) tableName = `Mesa ${tableId}`;
+    tableName = String(tableName ?? '');
+
+    const clientEmail = (r as any).clienteEmail ?? ((r.cliente && ((r.cliente as any).email ?? '')) || '');
+    const clientPhone = (r as any).clientePhone ?? ((r.cliente && ((r.cliente as any).telefono ?? (r.cliente as any).phone ?? '')) || '');
+
+    const mapped: Reservation = {
+      id: String(r.reservaId),
+      clientId: clientId,
+      clientName: clientName,
+      clientEmail: clientEmail,
+      clientPhone: clientPhone,
+      tableId: tableId,
+      tableName: tableName,
+      date: date,
+      time: time,
+      guests: Number(guests),
+      status: statusLabel,
+      notes: r.nota ?? '',
+      createdAt: undefined
+    } as Reservation;
+    return mapped;
+  }
+
+  // Helper to extract a readable string from a value that might be a nested object
+  private extractString(v: any, depth = 0): string {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if (depth > 3) return '';
+    if (typeof v === 'object') {
+      // Common candidate keys
+      const keys = ['nombre','name','numneroMesa','numeroMesa','numero','displayName','label','id','number','title'];
+      for (const k of keys) {
+        if ((v as any)[k] !== undefined && (typeof (v as any)[k] === 'string' || typeof (v as any)[k] === 'number')) {
+          return String((v as any)[k]);
+        }
+        if ((v as any)[k] !== undefined) {
+          const nested = this.extractString((v as any)[k], depth + 1);
+          if (nested) return nested;
+        }
+      }
+      // Try to inspect first string-like property
+      for (const k of Object.keys(v)) {
+        const nested = this.extractString((v as any)[k], depth + 1);
+        if (nested) return nested;
+      }
+    }
+    return '';
+  }
+
+  private mapEstadoToLabel(estado: string): string {
+    if (!estado) return 'Pendiente';
+    const e = estado.toUpperCase();
+    switch (e) {
+      case 'PENDIENTE': return 'Pendiente';
+      case 'CONFIRMADO': return 'Confirmada';
+      case 'CANCELADA': return 'Cancelada';
+      case 'FINALIZADA': return 'Completada';
+      case 'EN_CURSO': return 'Confirmada';
+      case 'NO_SHOW': return 'Cancelada';
+      default: return estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
+    }
+  }
+
+  private mapStatusLabelToEstado(label: string): string {
+    if (!label) return 'PENDIENTE';
+    const l = label.toLowerCase();
+    switch (l) {
+      case 'pendiente': return 'PENDIENTE';
+      case 'confirmada': return 'CONFIRMADO';
+      case 'cancelada': return 'CANCELADA';
+      case 'completada': return 'FINALIZADA';
+      default: return label.toUpperCase();
     }
   }
 
@@ -355,5 +669,10 @@ export class ReservacionesComponent implements OnInit {
 
   getTodayDate(): string {
     return new Date().toISOString().split('T')[0];
+  }
+
+  // Helper used only for debugging template output
+  isObject(v: any): boolean {
+    return v !== null && typeof v === 'object';
   }
 }
