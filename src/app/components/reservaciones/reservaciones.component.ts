@@ -16,214 +16,7 @@ import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reserv
   selector: 'app-reservaciones',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  template: `
-    <div class="reservaciones">
-      <div class="page-header">
-        <h2>Gestión de Reservaciones</h2>
-        <button class="btn btn-primary" (click)="openModal()">
-          <span class="btn-icon">➕</span>
-          Nueva Reservación
-        </button>
-      </div>
-
-      <div class="filters-section">
-        <div class="filter-group">
-          <label>Buscar:</label>
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            placeholder="Buscar por cliente, mesa o teléfono..."
-            class="search-input"
-          >
-        </div>
-        <div class="filter-group">
-          <label>Estado:</label>
-          <select [(ngModel)]="selectedStatus" class="filter-select">
-            <option value="">Todos</option>
-            <option value="Confirmada">Confirmada</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Cancelada">Cancelada</option>
-            <option value="Completada">Completada</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Mesa</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Personas</th>
-              <th>Estado</th>
-              <th>Teléfono</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let reservation of filteredReservations">
-              <td>
-                <div class="client-info">
-                  <div class="client-name">{{ reservation.clientName }}</div>
-                  <div class="client-email">{{ reservation.clientEmail }}</div>
-                </div>
-              </td>
-              <td>
-                <span class="table-name">{{ reservation.tableName }}</span>
-              </td>
-              <td>{{ formatDate(reservation.date) }}</td>
-              <td>{{ reservation.time }}</td>
-              <td>
-                <span class="guest-count">{{ reservation.guests }}</span>
-              </td>
-              <td>
-                <span class="status-badge" [class]="'status-' + (reservation.statusClass || 'pendiente')">
-                  {{ reservation.status }}
-                </span>
-              </td>
-              <td>{{ reservation.clientPhone }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button
-                    class="btn-action btn-edit"
-                    (click)="editReservation(reservation)"
-                    title="Editar"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    class="btn-action btn-delete"
-                    (click)="deleteReservation(reservation.id)"
-                    title="Eliminar"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Modal -->
-      <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>{{ editingReservation ? 'Editar' : 'Nueva' }} Reservación</h3>
-            <button class="modal-close" (click)="closeModal()">✕</button>
-          </div>
-
-          <form [formGroup]="reservationForm" (ngSubmit)="onSubmit()" class="modal-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Cliente *</label>
-                <select formControlName="clientId" class="form-control">
-                  <option value="">Seleccionar cliente</option>
-                  <option *ngFor="let client of clients" [value]="client.id">
-                    {{ client.name }} - {{ client.phone }}
-                  </option>
-                </select>
-                <div class="error-message" *ngIf="reservationForm.get('clientId')?.invalid && reservationForm.get('clientId')?.touched">
-                  Cliente es requerido
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Mesa *</label>
-                <select formControlName="tableId" class="form-control">
-                  <option value="">Seleccionar mesa</option>
-                  <option *ngFor="let table of availableTables" [value]="table.id">
-                    {{ table.name }} ({{ table.capacity }} personas)
-                  </option>
-                </select>
-                <div class="error-message" *ngIf="reservationForm.get('tableId')?.invalid && reservationForm.get('tableId')?.touched">
-                  Mesa es requerida
-                </div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Fecha *</label>
-                <input
-                  type="date"
-                  formControlName="date"
-                  class="form-control"
-                  [min]="getTodayDate()"
-                >
-                <div class="error-message" *ngIf="reservationForm.get('date')?.invalid && reservationForm.get('date')?.touched">
-                  Fecha es requerida
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Hora *</label>
-                <input
-                  type="time"
-                  formControlName="time"
-                  class="form-control"
-                >
-                <div class="error-message" *ngIf="reservationForm.get('time')?.invalid && reservationForm.get('time')?.touched">
-                  Hora es requerida
-                </div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Número de Personas *</label>
-                <input
-                  type="number"
-                  formControlName="guests"
-                  class="form-control"
-                  min="1"
-                  max="20"
-                >
-                <div class="error-message" *ngIf="reservationForm.get('guests')?.invalid && reservationForm.get('guests')?.touched">
-                  Número de personas debe ser entre 1 y 20
-                </div>
-              </div>
-
-              <div class="form-group" *ngIf="editingReservation">
-                <label>Estado</label>
-                <select formControlName="status" class="form-control">
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Confirmada">Confirmada</option>
-                  <option value="Cancelada">Cancelada</option>
-                  <option value="Completada">Completada</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Notas</label>
-              <textarea
-                formControlName="notes"
-                class="form-control"
-                rows="3"
-                placeholder="Notas adicionales (opcional)"
-              ></textarea>
-            </div>
-
-            <div class="modal-actions">
-              <button type="button" class="btn btn-secondary" (click)="closeModal()">
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="reservationForm.invalid"
-              >
-                {{ editingReservation ? 'Actualizar' : 'Crear' }} Reservación
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  `,
+  templateUrl: './reservaciones.component.html',
   styles: [
     `
     /* Modal overlay and content */
@@ -294,6 +87,7 @@ import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reserv
   ]
 })
 export class ReservacionesComponent implements OnInit {
+
   reservations: Reservation[] = [];
   filteredReservations: Reservation[] = [];
   clients: Client[] = [];
@@ -304,7 +98,52 @@ export class ReservacionesComponent implements OnInit {
   showModal = false;
   editingReservation: Reservation | null = null;
 
+
   reservationForm: FormGroup;
+
+  // Mensaje de solapamiento y flag para el botón
+  overlapWarning: string = '';
+
+  // Evita envíos múltiples mientras la petición está en curso
+  isSubmitting: boolean = false;
+
+  // Verifica si hay solapamiento de reservas para la mesa, fecha y hora seleccionados
+  checkOverlap() {
+    if (!this.reservationForm) return;
+    const form = this.reservationForm.value;
+    if (!form.tableId || !form.date || !form.time) {
+      this.overlapWarning = '';
+      return;
+    }
+    // Solo considerar reservas que no sean la que se está editando
+    const reservas = this.reservations.filter((r: any) => !this.editingReservation || r.id !== this.editingReservation.id);
+    const inicioSeleccionado = new Date(`${form.date}T${form.time}:00`).getTime();
+    const duracionSeleccionada = 60 * 60 * 1000; // 1 hora en ms
+    const finSeleccionado = inicioSeleccionado + duracionSeleccionada;
+    const solapada = reservas.some((r: any) => {
+      if (String(r.tableId) !== String(form.tableId)) return false;
+      const inicio = new Date(`${r.date}T${r.time}:00`).getTime();
+      const fin = inicio + duracionSeleccionada;
+      // Solapan si se cruzan los intervalos
+      return fin > inicioSeleccionado && inicio < finSeleccionado;
+    });
+    this.overlapWarning = solapada ? 'Ya existe una reserva para esa mesa, fecha y hora.' : '';
+  }
+
+
+  // Getter para deshabilitar campos si la reserva está confirmada, en curso o finalizada
+  get esSoloLectura(): boolean {
+    if (!this.editingReservation) return false;
+    const estado = (this.editingReservation.status || '').toUpperCase();
+    return estado === 'CONFIRMADA' || estado === 'EN CURSO' || estado === 'FINALIZADA';
+  }
+
+  // Permite editar el estado aunque los demás campos estén deshabilitados
+  get puedeEditarEstado(): boolean {
+    if (!this.editingReservation) return false;
+    const control = this.reservationForm.get('status');
+    return !!control && !control.disabled;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -323,6 +162,9 @@ export class ReservacionesComponent implements OnInit {
       status: ['Pendiente'],
       notes: ['']
     });
+
+    // Suscribirse a cambios en el formulario para validar solapamiento en tiempo real
+    this.reservationForm.valueChanges.subscribe(() => this.checkOverlap());
   }
 
   ngOnInit() {
@@ -458,6 +300,7 @@ export class ReservacionesComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.isSubmitting) return; // evitar doble envío
     if (!this.reservationForm.valid) return;
 
     const formData = this.reservationForm.value;
@@ -482,8 +325,11 @@ export class ReservacionesComponent implements OnInit {
         estado: this.mapStatusLabelToEstado(formData.status)
       };
 
+      // evitar envíos múltiples al actualizar
+      this.isSubmitting = true;
       this.reservasService.update(Number(this.editingReservation.id), dtoUpdate).subscribe({
         next: updated => {
+          this.isSubmitting = false;
           const idx = this.reservations.findIndex(r => r.id === this.editingReservation!.id);
           if (idx !== -1) this.reservations[idx] = this.mapReservaToReservation(updated as Reserva);
           this.filterReservations();
@@ -491,23 +337,40 @@ export class ReservacionesComponent implements OnInit {
           this.notification.show('Reservación actualizada', 'success');
         },
         error: err => {
+          this.isSubmitting = false;
           console.error('Error actualizando reservación', err);
-          const msg = err?.error?.message || err?.message || 'Error actualizando reservación';
-          this.notification.show(msg.substring(0, 140), 'error');
+          // Manejo específico para 409 (conflict) que devuelve {mensaje, codigo}
+          if (err && err.status === 409) {
+            const m = err.error && (err.error.mensaje || err.error.message) ? (err.error.mensaje || err.error.message) : 'Conflicto en la reservación';
+            this.notification.show(String(m).substring(0, 140), 'error');
+          } else {
+            const msg = err?.error?.message || (typeof err?.error === 'string' ? err.error : err?.message) || 'Error actualizando reservación';
+            this.notification.show(String(msg).substring(0, 140), 'error');
+          }
         }
       });
     } else {
+      // evitar envíos múltiples al crear
+      this.isSubmitting = true;
       this.reservasService.create(dtoCreate).subscribe({
         next: created => {
+          this.isSubmitting = false;
           this.reservations.unshift(this.mapReservaToReservation(created as Reserva));
           this.filterReservations();
           this.closeModal();
           this.notification.show('Reservación creada', 'success');
         },
         error: err => {
+          this.isSubmitting = false;
           console.error('Error creando reservación', err);
-          const msg = err?.error?.message || err?.message || 'Error creando reservación';
-          this.notification.show(msg.substring(0, 140), 'error');
+          // Manejo específico para 409 (conflict) que devuelve {mensaje, codigo}
+          if (err && err.status === 409) {
+            const m = err.error && (err.error.mensaje || err.error.message) ? (err.error.mensaje || err.error.message) : 'Conflicto en la reservación';
+            this.notification.show(String(m).substring(0, 140), 'error');
+          } else {
+            const msg = err?.error?.message || (typeof err?.error === 'string' ? err.error : err?.message) || 'Error creando reservación';
+            this.notification.show(String(msg).substring(0, 140), 'error');
+          }
         }
       });
     }
