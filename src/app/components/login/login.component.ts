@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -47,7 +48,7 @@ import { AuthService } from '../../services/auth.service';
             </div>
           </div>
 
-          <div class="error-message" *ngIf="error">
+          <div class="form-error" *ngIf="error">
             {{ error }}
           </div>
 
@@ -64,7 +65,7 @@ import { AuthService } from '../../services/auth.service';
         <div class="demo-credentials">
           <h3>Credenciales de Prueba:</h3>
           <div class="credential-item">
-            <strong>Admin:</strong> admin&#64;restaurant.com / admin123
+            <strong>Admin:</strong> admin&#64;restaurant.com / 123456
           </div>
           <div class="credential-item">
             <strong>Empleado:</strong> empleado&#64;restaurant.com / empleado123
@@ -155,6 +156,19 @@ import { AuthService } from '../../services/auth.service';
       margin-top: 8px;
     }
 
+    /* Mensaje de error general del formulario (más grande y destacado) */
+    .form-error {
+      color: #7f1d1d;
+      background: rgba(254, 226, 226, 0.9);
+      border-left: 4px solid #dc2626;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 12px 0 18px 0;
+      box-shadow: 0 2px 6px rgba(220,38,38,0.06);
+    }
+
     .btn-primary {
       width: 100%;
       padding: 14px;
@@ -230,7 +244,33 @@ export class LoginComponent {
         },
         error: (error) => {
           this.loading = false;
-          this.error = error.message || 'Error al iniciar sesión';
+
+          // If backend returned an HttpErrorResponse, map common statuses to friendly messages
+          if (error instanceof HttpErrorResponse) {
+            // Prefer server-provided message when available
+            const serverMsg = error.error?.mensaje || error.error?.message || null;
+
+            if (error.status === 400 || error.status === 401) {
+              this.error = serverMsg || 'Usuario o contraseña incorrectos';
+              return;
+            }
+
+            if (error.status === 0) {
+              this.error = 'No se pudo conectar con el servidor. Verifica tu conexión.';
+              return;
+            }
+
+            if (error.status >= 500) {
+              this.error = serverMsg || 'Error del servidor, inténtalo más tarde.';
+              return;
+            }
+
+            // Fallback to any server message or the status text
+            this.error = serverMsg || error.statusText || 'Error al iniciar sesión';
+            return;
+          }
+
+          this.error = error?.message || 'Error al iniciar sesión';
         }
       });
     }
