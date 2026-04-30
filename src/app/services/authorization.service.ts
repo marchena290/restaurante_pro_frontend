@@ -11,10 +11,10 @@ export interface MenuItem {
 @Injectable({ providedIn: 'root' })
 export class AuthorizationService {
   private allMenu: MenuItem[] = [
-    { label: 'Dashboard', route: '/dashboard', icon: '🏠', roles: ['ADMIN', 'EMPLEADO'] },
+    { label: 'Dashboard', route: '/dashboard', icon: '🏠', roles: ['ADMIN', 'EMPLEADO','GUEST'] },
     { label: 'Clientes', route: '/clientes', icon: '👥', roles: ['ADMIN', 'EMPLEADO'] },
-    { label: 'Mesas', route: '/mesas', icon: '🪑', roles: ['ADMIN', 'EMPLEADO'] },
-    { label: 'Menús', route: '/menus', icon: '🍽️', roles: ['ADMIN', 'EMPLEADO'] },
+    { label: 'Mesas', route: '/mesas', icon: '🪑', roles: ['ADMIN', 'EMPLEADO','GUEST'] },
+    { label: 'Menús', route: '/menus', icon: '🍽️', roles: ['ADMIN', 'EMPLEADO', 'GUEST'] },
     { label: 'Reservaciones', route: '/reservaciones', icon: '📅', roles: ['ADMIN', 'EMPLEADO'] },
     { label: 'Usuarios', route: '/usuarios', icon: '👤', roles: ['ADMIN'] }
   ];

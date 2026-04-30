@@ -12,7 +12,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     canActivate: [AuthGuard],
-    data: { roles: ['ADMIN', 'EMPLEADO'], title: 'Dashboard' },
+    data: { roles: ['ADMIN', 'EMPLEADO', 'GUEST'], title: 'Dashboard' },
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
 
@@ -26,14 +26,14 @@ export const routes: Routes = [
   {
     path: 'menus',
     canActivate: [AuthGuard],
-    data: { roles: ['ADMIN', 'EMPLEADO'], title: 'Menús' },
+    data: { roles: ['ADMIN', 'EMPLEADO', 'GUEST'], title: 'Menús' },
     loadComponent: () => import('./components/menus/menus.component').then(m => m.MenusComponent)
   },
 
   {
     path: 'mesas',
     canActivate: [AuthGuard],
-    data: { roles: ['ADMIN', 'EMPLEADO'], title: 'Mesas' },
+    data: { roles: ['ADMIN', 'EMPLEADO', 'GUEST'], title: 'Mesas' },
     loadComponent: () => import('./components/mesas/mesas.component').then(m => m.MesasComponent)
   },
 
