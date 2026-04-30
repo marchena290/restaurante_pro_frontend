@@ -65,10 +65,7 @@ import { AuthService } from '../../services/auth.service';
         <div class="demo-credentials">
           <h3>Credenciales de Prueba:</h3>
           <div class="credential-item">
-            <strong>Admin:</strong> admin&#64;restaurant.com / 123456
-          </div>
-          <div class="credential-item">
-            <strong>Empleado:</strong> empleado&#64;restaurant.com / empleado123
+            <strong>Invitado:</strong> invitado&#64;restaurant.com / 123456
           </div>
         </div>
       </div>
