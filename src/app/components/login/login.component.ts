@@ -63,9 +63,9 @@ import { AuthService } from '../../services/auth.service';
         </form>
 
         <div class="demo-credentials">
-          <h3>Credenciales de Prueba:</h3>
+          <h3>Credencial de Prueba:</h3>
           <div class="credential-item">
-            <strong>Invitado:</strong> invitado&#64;restaurant.com / 123456
+            <strong>Invitado:</strong> invitado&#64;restaurant.com / invi123
           </div>
         </div>
       </div>
