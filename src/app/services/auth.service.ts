@@ -134,6 +134,13 @@ export class AuthService {
   }
 
   /**
+   * Verifica si el usuario es invitado o guest
+   */
+  isGuest(): boolean {
+    return this.hasRole('GUEST') || this.hasRole('INVITADO');
+  }
+
+  /**
    * Intenta extraer información básica del usuario desde el token JWT.
    * Devuelve null si no hay token o no contiene información útil.
    */

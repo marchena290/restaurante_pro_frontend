@@ -18,7 +18,7 @@ import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
     <div class="mesas">
       <div class="page-header">
         <h2>Gestión de Mesas</h2>
-        <button class="btn btn-primary" (click)="openModal()">
+        <button class="btn btn-primary" (click)="openModal()" [disabled]="isGuest" [title]="isGuest ? 'No tienes permiso para crear mesas' : 'Crear nueva mesa'">
           <span class="btn-icon">➕</span>
           Nueva Mesa
         </button>
@@ -57,14 +57,16 @@ import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
               <button
                 class="btn-action btn-edit"
                 (click)="editTable(table)"
-                title="Editar"
+                [disabled]="isGuest"
+                [title]="isGuest ? 'No tienes permiso para editar' : 'Editar'"
               >
                 ✏️
               </button>
               <button
                 class="btn-action btn-delete"
                 (click)="deleteTable(table.id)"
-                title="Eliminar"
+                [disabled]="isGuest"
+                [title]="isGuest ? 'No tienes permiso para eliminar' : 'Eliminar'"
               >
                 🗑️
               </button>
@@ -294,6 +296,7 @@ export class MesasComponent implements OnInit {
   selectedStatus = '';
   showModal = false;
   editingTable: Table | null = null;
+  isGuest = false;
 
   tableForm: FormGroup;
 
@@ -317,6 +320,7 @@ export class MesasComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isGuest = this.auth.isGuest();
     this.loadTables();
   }
   private loadTables() {
@@ -546,6 +550,10 @@ export class MesasComponent implements OnInit {
   }
 
   openModal() {
+    if (this.isGuest) {
+      this.notification.show('No tienes permiso para crear mesas', 'error');
+      return;
+    }
     this.showModal = true;
     this.editingTable = null;
     this.tableForm.reset({ numero: 1, capacity: 4, status: 'Disponible' });
@@ -557,6 +565,10 @@ export class MesasComponent implements OnInit {
   }
 
   editTable(table: Table) {
+    if (this.isGuest) {
+      this.notification.show('No tienes permiso para editar mesas', 'error');
+      return;
+    }
     this.editingTable = table;
     this.showModal = true;
 
@@ -570,6 +582,10 @@ export class MesasComponent implements OnInit {
   }
 
   deleteTable(id: string) {
+    if (this.isGuest) {
+      this.notification.show('No tienes permiso para eliminar mesas', 'error');
+      return;
+    }
     this.confirmService.confirm({
       title: 'Eliminar mesa',
       message: '¿Está seguro de eliminar esta mesa? Esta acción no se puede deshacer.',

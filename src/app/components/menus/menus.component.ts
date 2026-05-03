@@ -5,6 +5,7 @@ import { Menu, CreateMenuItemDto, UpdateMenuItemDto } from '../../models/menu.mo
 import { MenusService } from '../../services/menus.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmService } from '../../services/confirm.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-menus',
@@ -14,7 +15,7 @@ import { ConfirmService } from '../../services/confirm.service';
     <div class="menus">
       <div class="page-header">
         <h2>Gestión de Menús</h2>
-        <button class="btn btn-primary" (click)="openModal()">
+        <button class="btn btn-primary" (click)="openModal()" [disabled]="isGuest" [title]="isGuest ? 'No tienes permiso para crear menús' : 'Crear nuevo menú'">
           <span class="btn-icon">➕</span>
           Nuevo Menú
         </button>
@@ -66,14 +67,16 @@ import { ConfirmService } from '../../services/confirm.service';
                   <button
                     class="btn-action btn-edit"
                     (click)="editMenu(menu)"
-                    title="Editar"
+                    [disabled]="isGuest"
+                    [title]="isGuest ? 'No tienes permiso para editar' : 'Editar'"
                   >
                     ✏️
                   </button>
                   <button
                     class="btn-action btn-delete"
                     (click)="deleteMenu(menu.id)"
-                    title="Eliminar"
+                    [disabled]="isGuest"
+                    [title]="isGuest ? 'No tienes permiso para eliminar' : 'Eliminar'"
                   >
                     🗑️
                   </button>
@@ -207,6 +210,7 @@ export class MenusComponent implements OnInit {
   showModal = false;
   editingMenu: Menu | null = null;
   saving = false;
+  isGuest = false;
 
   menuForm: FormGroup;
 
@@ -214,7 +218,8 @@ export class MenusComponent implements OnInit {
     private fb: FormBuilder,
     private menusService: MenusService,
     private notification: NotificationService,
-    private confirm: ConfirmService
+    private confirm: ConfirmService,
+    private authService: AuthService
   ) {
     this.menuForm = this.fb.group({
       name: ['', Validators.required],
@@ -224,6 +229,7 @@ export class MenusComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isGuest = this.authService.isGuest();
     this.loadMenus();
   }
 
@@ -254,6 +260,10 @@ export class MenusComponent implements OnInit {
   }
 
   openModal() {
+    if (this.isGuest) {
+      this.notification.show('No tienes permiso para crear menús', 'error');
+      return;
+    }
     this.showModal = true;
     this.editingMenu = null;
     this.menuForm.reset({ price: 0 });
@@ -268,6 +278,10 @@ export class MenusComponent implements OnInit {
   }
 
   editMenu(menu: Menu) {
+    if (this.isGuest) {
+      this.notification.show('No tienes permiso para editar menús', 'error');
+      return;
+    }
     this.editingMenu = menu;
     this.showModal = true;
     this.menuForm.patchValue({ name: menu.name, description: menu.description, price: menu.price });
@@ -276,6 +290,10 @@ export class MenusComponent implements OnInit {
   }
 
   async deleteMenu(id: string) {
+    if (this.isGuest) {
+      this.notification.show('No tienes permiso para eliminar menús', 'error');
+      return;
+    }
     const ok = await this.confirm.confirm({ title: 'Eliminar menú', message: '¿Está seguro de eliminar este menú?' });
     if (!ok) return;
 
