@@ -341,9 +341,31 @@ import { NotificationService } from '../../services/notification.service';
       margin-right:8px;
     }
 
-    @media (max-width:640px) {
-      .modal-content { width: 100%; padding: 14px; }
-      .modal-form .form-row { flex-direction: column; }
+    @media (max-width: 768px) {
+      .usuarios { padding: 12px }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 16px }
+      .page-header h2 { font-size: 1.25rem }
+      .filters-section { display: flex; flex-direction: column; gap: 10px; padding: 10px; margin-bottom: 12px }
+      .filter-group { display: flex; flex-direction: column; gap: 6px }
+      .table-container { border-radius: 8px }
+      .data-table { display: block }
+      .data-table thead { display: none }
+      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; background: white; padding: 12px }
+      .data-table td { display: block; padding: 8px 0; border: none; font-size: 0.95rem }
+      .data-table td::before { content: attr(data-label); display: block; font-weight: 600; color: #6b7280; font-size: 0.85rem; margin-bottom: 4px }
+      .user-info { gap: 8px }
+      .role-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem }
+      .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem }
+      .action-buttons { gap: 6px; justify-content: flex-start }
+      .form-row { grid-template-columns: 1fr }
+      .modal-content { max-width: 100%; margin: 10px }
+    }
+    @media (max-width: 640px) {
+      .table-container { border-radius: 6px }
+      .page-header { gap: 8px }
+      .page-header h2 { font-size: 1.1rem }
+      .filters-section { gap: 8px; padding: 8px }
+      .data-table td { padding: 6px 0 }
     }
     .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
     .confirm-text { font-size:0.9rem; color:#374151; margin-right:6px; }

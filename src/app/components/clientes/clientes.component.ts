@@ -209,7 +209,31 @@ import { NotificationService } from '../../services/notification.service';
     .clientes-modal-overlay { background: rgba(2,6,23,0.55) !important; }
     .clientes-modal-content { border-radius:12px !important; }
 
-    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } .modal-content { margin:10px; max-width:100%; } }
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .clientes { padding: 12px }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 16px }
+      .page-header h2 { font-size: 1.25rem }
+      .filters-section { padding: 10px; margin-bottom: 12px }
+      .table-container { border-radius: 8px }
+      /* Convert table to stacked cards on mobile */
+      .data-table { display: block; border-collapse: separate; border-spacing: 0 }
+      .data-table thead { display: none }
+      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; background: white; padding: 12px }
+      .data-table td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; font-size: 0.95rem }
+      .data-table td::before { content: attr(data-label); font-weight: 600; color: #6b7280; flex: 0 0 120px; font-size: 0.85rem }
+      .client-name { display: flex; align-items: center; gap: 8px }
+      .action-buttons { justify-content: flex-end; gap: 8px }
+      .form-row { grid-template-columns: 1fr }
+      .modal-content { margin: 10px; max-width: 100% }
+    }
+    @media (max-width: 640px) {
+      .table-container { border-radius: 6px }
+      .page-header { gap: 8px }
+      .page-header h2 { font-size: 1.1rem }
+      .data-table td { flex-direction: column; align-items: flex-start; padding: 8px 0 }
+      .data-table td::before { margin-bottom: 4px }
+    }
     .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
     .confirm-text { font-size:0.9rem; color:#374151; margin-right:6px; }
     .btn-sm { padding:6px 8px; border-radius:6px; font-size:0.85rem; }

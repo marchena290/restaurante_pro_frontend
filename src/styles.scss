@@ -263,6 +263,26 @@ body.mobile-menu-open {
 	.sidebar.open { transform: translateX(0); }
 	.sidebar-backdrop { display: block; }
 	.login-card { padding: 24px; }
+
+	/* Improve table responsiveness on tablets */
+	.search-input, .filter-select { min-width: auto; width: 100%; }
+	.filters-section { flex-direction: column; gap: 10px }
+	.data-table { font-size: 0.95rem }
+	.data-table th, .data-table td { padding: 10px 12px }
+	.modal-content { max-width: 95% !important; }
+}
+
+@media (max-width: 640px) {
+	.login-card { padding: 20px; }
+	.search-input, .filter-select { width: 100%; font-size: 16px }
+	.filters-section { gap: 8px; flex-direction: column }
+	.page-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 12px }
+	.data-table { font-size: 0.9rem }
+	.data-table th, .data-table td { padding: 8px 10px }
+	.modal-header { padding: 12px 14px; font-size: 0.95rem }
+	.modal-content { max-width: 95% !important; margin: 10px; padding: 14px }
+	.btn { padding: 6px 10px; font-size: 0.9rem }
+	.page-header h2 { font-size: 1.1rem }
 }
 
 /* Small utility tweaks */
@@ -316,6 +336,14 @@ body.mobile-menu-open {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 16px;
+}
+
+@media (max-width: 1024px) {
+	.tables-grid { grid-template-columns: repeat(2, 1fr); gap: 12px }
+}
+
+@media (max-width: 768px) {
+	.tables-grid { grid-template-columns: 1fr; gap: 12px }
 }
 
 .table-card {
@@ -452,11 +480,24 @@ body.mobile-menu-open {
 
 @media (max-width: 1024px) {
 	.tables-grid { grid-template-columns: repeat(2, 1fr); }
+	.stats-section { gap: 12px }
+	.stat-card { min-width: 140px; padding: 14px; }
+}
+
+@media (max-width: 768px) {
+	.stats-section { gap: 10px; margin-top: 16px }
+	.stat-card { flex: 1 1 calc(50% - 5px); min-width: auto; padding: 12px }
+	.stat-number { font-size: 1.25rem }
+	.stat-label { font-size: 0.9rem }
 }
 
 @media (max-width: 640px) {
-	.tables-grid { grid-template-columns: 1fr; }
+	.tables-grid { grid-template-columns: 1fr; gap: 10px }
 	.filters-section { gap:8px; }
+	.stats-section { gap: 8px; flex-direction: column }
+	.stat-card { flex: 1 1 auto; min-width: auto; padding: 12px }
+	.stat-number { font-size: 1.1rem }
+	.stat-label { font-size: 0.85rem }
 }
 
 /* Dashboard specific layout */

@@ -73,10 +73,23 @@ import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reserv
     .btn-secondary { background: #f4f6f8; color: #222; border-color: #e6e9ee }
 
     /* Small screens */
+    @media (max-width: 768px) {
+      .data-table { font-size: 0.9rem }
+      .data-table th, .data-table td { padding: 8px 6px }
+      .modal-header { padding: 12px 16px }
+      .modal-form { padding: 12px 16px; gap: 10px }
+      .form-row { grid-template-columns: 1fr }
+      .modal-actions { padding: 10px 16px 16px; gap: 8px }
+      .modal-content { max-width: 95%; }
+      .btn { padding: 6px 10px; font-size: 0.9rem }
+    }
     @media (max-width: 640px) {
       .form-row { grid-template-columns: 1fr }
-      .modal-content { max-width: 95%; }
-      .modal-actions { padding: 12px }
+      .modal-content { max-width: 95%; margin: 10px }
+      .modal-actions { padding: 10px }
+      .modal-form { padding: 10px 12px; gap: 8px }
+      .form-group label { font-size: 12px }
+      .form-control { padding: 6px 8px; font-size: 13px }
     }
 
     /* minor improvements for table/overview */
