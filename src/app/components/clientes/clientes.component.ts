@@ -173,37 +173,37 @@ import { NotificationService } from '../../services/notification.service';
   styles: [
     `
     /* Component-scoped Clientes styles (BoltNew-inspired modal) */
-    .clientes { padding: 24px; min-height: 100%; background: #f8fafc; }
+    .clientes { padding: 16px; min-height: 100%; background: #f8fafc; }
 
-    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
-    .page-header h2 { margin:0; font-size:1.875rem; font-weight:700; color:#0f172a; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .page-header h2 { margin:0; font-size:1.5rem; font-weight:700; color:#0f172a; }
 
-    .filters-section { background:white; padding:16px; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); margin-bottom:20px; }
+    .filters-section { background:white; padding:10px; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); margin-bottom:12px; }
 
     .table-container { background:white; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); overflow:hidden; }
-    .data-table th, .data-table td { padding:12px 16px; }
+    .data-table th, .data-table td { padding:10px 12px; }
 
     /* Modal base */
     .modal-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.45); z-index:2000; padding:20px; }
 
     .modal-content { background:var(--white); border-radius:12px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 48px rgba(2,6,23,0.12); }
 
-    .modal-header { padding:18px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; }
-    .modal-title { margin:0; font-size:1.125rem; font-weight:700; color:#0f172a; }
-    .modal-close { background:transparent; border:none; font-size:1.05rem; color:#475569; padding:6px; border-radius:6px; cursor:pointer; }
+    .modal-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; }
+    .modal-title { margin:0; font-size:1rem; font-weight:700; color:#0f172a; }
+    .modal-close { background:transparent; border:none; font-size:1.05rem; color:#475569; padding:4px; border-radius:6px; cursor:pointer; }
     .modal-close:hover { background:#f1f5f9; color:#0f172a; }
 
-    .modal-form { padding:14px 20px 20px 20px; }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .form-group { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+    .modal-form { padding:12px 16px 16px 16px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
 
-    .form-control { padding:10px 12px; border:1px solid #e6eefb; border-radius:8px; font-size:0.95rem; background:#fbfdff; transition:box-shadow .12s ease, border-color .12s ease; }
+    .form-control { padding:8px 10px; border:1px solid #e6eefb; border-radius:8px; font-size:0.9rem; background:#fbfdff; transition:box-shadow .12s ease, border-color .12s ease; }
     .form-control:focus { outline:none; box-shadow:0 6px 18px rgba(59,130,246,0.12); border-color:#3b82f6; }
 
-    .error-message { color:#dc2626; font-size:0.85rem; }
+    .error-message { color:#dc2626; font-size:0.8rem; }
 
-    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; padding-top:10px; border-top:1px solid #f8fafc; }
-    .btn-primary { min-width:130px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; padding-top:8px; border-top:1px solid #f8fafc; }
+    .btn-primary { min-width:120px; }
 
     /* Clientes-specific modifiers */
     .clientes-modal-overlay { background: rgba(2,6,23,0.55) !important; }
@@ -211,28 +211,30 @@ import { NotificationService } from '../../services/notification.service';
 
     /* Mobile responsiveness */
     @media (max-width: 768px) {
-      .clientes { padding: 12px }
-      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 16px }
+      .clientes { padding: 10px }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 12px }
       .page-header h2 { font-size: 1.25rem }
-      .filters-section { padding: 10px; margin-bottom: 12px }
+      .filters-section { padding: 8px; margin-bottom: 10px }
       .table-container { border-radius: 8px }
       /* Convert table to stacked cards on mobile */
       .data-table { display: block; border-collapse: separate; border-spacing: 0 }
       .data-table thead { display: none }
-      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; background: white; padding: 12px }
-      .data-table td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; font-size: 0.95rem }
-      .data-table td::before { content: attr(data-label); font-weight: 600; color: #6b7280; flex: 0 0 120px; font-size: 0.85rem }
-      .client-name { display: flex; align-items: center; gap: 8px }
-      .action-buttons { justify-content: flex-end; gap: 8px }
+      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 10px; background: white; padding: 10px }
+      .data-table td { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border: none; font-size: 0.9rem }
+      .data-table td::before { content: attr(data-label); font-weight: 600; color: #6b7280; flex: 0 0 100px; font-size: 0.8rem }
+      .client-name { display: flex; align-items: center; gap: 6px }
+      .action-buttons { justify-content: flex-end; gap: 6px }
       .form-row { grid-template-columns: 1fr }
       .modal-content { margin: 10px; max-width: 100% }
     }
     @media (max-width: 640px) {
       .table-container { border-radius: 6px }
-      .page-header { gap: 8px }
+      .page-header { gap: 6px }
       .page-header h2 { font-size: 1.1rem }
-      .data-table td { flex-direction: column; align-items: flex-start; padding: 8px 0 }
-      .data-table td::before { margin-bottom: 4px }
+      .data-table td { flex-direction: column; align-items: flex-start; padding: 6px 0 }
+      .data-table td::before { margin-bottom: 2px }
+      .modal-form { padding: 10px 12px 12px }
+      .form-group { margin-bottom: 8px }
     }
     .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
     .confirm-text { font-size:0.9rem; color:#374151; margin-right:6px; }
