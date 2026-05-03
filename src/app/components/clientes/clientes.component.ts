@@ -50,22 +50,22 @@ import { NotificationService } from '../../services/notification.service';
           </thead>
           <tbody>
             <tr *ngFor="let client of filteredClients">
-              <td>
+              <td data-label="Nombre">
                 <div class="client-name">
                   <div class="name-avatar">{{ client.name.charAt(0) }}</div>
                   <span>{{ client.name }}</span>
                 </div>
               </td>
-              <td>{{ client.email }}</td>
-              <td>
+              <td data-label="Email">{{ client.email }}</td>
+              <td data-label="Teléfono">
                 <span class="phone-number">{{ client.phone }}</span>
               </td>
-              <td>{{ client.address || 'No especificada' }}</td>
-              <td>
+              <td data-label="Dirección">{{ client.address || 'No especificada' }}</td>
+              <td data-label="Reservas">
                 <span class="reservation-count">{{ client.totalReservations }}</span>
               </td>
-              <td>{{ formatDate(client.createdAt) }}</td>
-              <td>
+              <td data-label="Registro">{{ formatDate(client.createdAt) }}</td>
+              <td data-label="Acciones">
                 <div class="action-buttons">
                   <button
                     class="btn-action btn-edit"

@@ -47,22 +47,22 @@ import { AuthService } from '../../services/auth.service';
           </thead>
           <tbody>
             <tr *ngFor="let menu of filteredMenus">
-              <td>
+              <td data-label="ID">
                 <span class="menu-id">{{ menu.id }}</span>
               </td>
-              <td>
+              <td data-label="Nombre">
                 <div class="menu-name">
                   <span class="name-badge">🍽️</span>
                   <span>{{ menu.name }}</span>
                 </div>
               </td>
-              <td>
+              <td data-label="Descripción">
                 <span class="menu-description">{{ menu.description || 'Sin descripción' }}</span>
               </td>
-              <td class="col-price">
+              <td class="col-price" data-label="Precio">
                 <span class="menu-price">\${{ menu.price.toFixed(2) }}</span>
               </td>
-              <td>
+              <td data-label="Acciones">
                 <div class="action-buttons">
                   <button
                     class="btn-action btn-edit"
