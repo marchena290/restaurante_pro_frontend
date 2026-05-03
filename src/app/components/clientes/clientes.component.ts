@@ -172,68 +172,75 @@ import { NotificationService } from '../../services/notification.service';
   `,
   styles: [
     `
-    /* Component-scoped Clientes styles (BoltNew-inspired modal) */
+    /* Component-scoped Clientes styles - Compact like Menus */
     .clientes { padding: 16px; min-height: 100%; background: #f8fafc; }
 
-    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-    .page-header h2 { margin:0; font-size:1.5rem; font-weight:700; color:#0f172a; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px }
+    .page-header h2 { margin:0; font-size:1.3rem; font-weight:700; color:#0f172a; }
 
-    .filters-section { background:white; padding:10px; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); margin-bottom:12px; }
+    .filters-section { background:white; padding:8px 10px; border-radius:10px; box-shadow:0 1px 3px rgba(2,6,23,0.04); margin-bottom:12px; }
+    .filter-group { display:flex; flex-direction:column; gap:4px }
+    .filter-group label { font-size:0.8rem; font-weight:600; color:#475569 }
 
-    .table-container { background:white; border-radius:12px; box-shadow:0 1px 3px rgba(2,6,23,0.04); overflow:hidden; }
-    .data-table th, .data-table td { padding:10px 12px; }
+    .table-container { background:white; border-radius:10px; box-shadow:0 1px 3px rgba(2,6,23,0.04); overflow:hidden; }
+    .data-table { width:100%; border-collapse:collapse; font-size:0.9rem }
+    .data-table th { padding:8px 10px; text-align:left; font-weight:600; background:#f9fafb; color:#475569; font-size:0.85rem; border-bottom:1px solid #e5e7eb }
+    .data-table td { padding:8px 10px; border-bottom:1px solid #f3f4f6 }
+    .data-table tr:hover { background:#fbfdff }
 
-    /* Modal base */
-    .modal-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.45); z-index:2000; padding:20px; }
+    .client-name { display:flex; align-items:center; gap:6px }
+    .name-avatar { width:32px; height:32px; border-radius:50%; background:#3b82f6; color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.85rem }
+    .phone-number { font-family:monospace; font-size:0.85rem; color:#6b7280 }
+    .reservation-count { display:inline-block; min-width:24px; text-align:center; padding:2px 4px; border-radius:4px; background:rgba(59,130,246,0.1); color:#2563eb; font-weight:600; font-size:0.85rem }
 
-    .modal-content { background:var(--white); border-radius:12px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 48px rgba(2,6,23,0.12); }
+    /* Actions */
+    .action-buttons { display:flex; gap:4px }
+    .btn-action { background:transparent; border:none; cursor:pointer; padding:4px; border-radius:6px; font-size:0.95rem }
+    .btn-action:hover { background:#f1f5f9 }
 
-    .modal-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; }
-    .modal-title { margin:0; font-size:1rem; font-weight:700; color:#0f172a; }
-    .modal-close { background:transparent; border:none; font-size:1.05rem; color:#475569; padding:4px; border-radius:6px; cursor:pointer; }
-    .modal-close:hover { background:#f1f5f9; color:#0f172a; }
+    /* Modal styles */
+    .modal-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.45); z-index:2000; padding:16px }
 
-    .modal-form { padding:12px 16px 16px 16px; }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+    .modal-content { background:white; border-radius:10px; width:100%; max-width:500px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 40px rgba(2,6,23,0.12) }
 
-    .form-control { padding:8px 10px; border:1px solid #e6eefb; border-radius:8px; font-size:0.9rem; background:#fbfdff; transition:box-shadow .12s ease, border-color .12s ease; }
-    .form-control:focus { outline:none; box-shadow:0 6px 18px rgba(59,130,246,0.12); border-color:#3b82f6; }
+    .modal-header { padding:12px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9 }
+    .modal-header h3 { margin:0; font-size:0.95rem; font-weight:700; color:#0f172a }
+    .modal-close { background:transparent; border:none; font-size:1rem; color:#6b7280; padding:2px 4px; border-radius:4px; cursor:pointer }
+    .modal-close:hover { background:#f1f5f9; color:#0f172a }
 
-    .error-message { color:#dc2626; font-size:0.8rem; }
+    .modal-form { padding:10px 14px }
+    .form-group { display:flex; flex-direction:column; gap:4px; margin-bottom:10px }
+    .form-group label { font-size:0.85rem; font-weight:600; color:#0f172a }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px }
 
-    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; padding-top:8px; border-top:1px solid #f8fafc; }
-    .btn-primary { min-width:120px; }
+    .form-control { padding:6px 8px; border:1px solid #e5e7eb; border-radius:6px; font-size:0.85rem; background:#fbfdff }
+    .form-control:focus { outline:none; box-shadow:0 4px 12px rgba(59,130,246,0.1); border-color:#3b82f6 }
 
-    /* Clientes-specific modifiers */
-    .clientes-modal-overlay { background: rgba(2,6,23,0.55) !important; }
-    .clientes-modal-content { border-radius:12px !important; }
+    .error-message { color:#dc2626; font-size:0.75rem; margin-top:2px }
+
+    .modal-actions { display:flex; justify-content:flex-end; gap:6px; padding:8px 14px 10px; border-top:1px solid #f1f5f9 }
+    .btn { padding:6px 10px; border-radius:6px; font-weight:600; border:none; cursor:pointer; font-size:0.85rem }
+    .btn-primary { background:#2563eb; color:white; min-width:100px }
+    .btn-secondary { background:#f3f4f6; color:#0f172a }
 
     /* Mobile responsiveness */
     @media (max-width: 768px) {
       .clientes { padding: 10px }
-      .page-header { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 12px }
-      .page-header h2 { font-size: 1.25rem }
-      .filters-section { padding: 8px; margin-bottom: 10px }
-      .table-container { border-radius: 8px }
-      /* Convert table to stacked cards on mobile */
-      .data-table { display: block; border-collapse: separate; border-spacing: 0 }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 10px }
+      .page-header h2 { font-size: 1.1rem }
+      .filters-section { padding: 6px 8px; margin-bottom: 10px }
+      .data-table th, .data-table td { padding: 6px 8px; font-size: 0.85rem }
       .data-table thead { display: none }
-      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 10px; background: white; padding: 10px }
-      .data-table td { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border: none; font-size: 0.9rem }
-      .data-table td::before { content: attr(data-label); font-weight: 600; color: #6b7280; flex: 0 0 100px; font-size: 0.8rem }
-      .client-name { display: flex; align-items: center; gap: 6px }
-      .action-buttons { justify-content: flex-end; gap: 6px }
+      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 8px; background: white; padding: 8px }
+      .data-table td { display: block; padding: 4px 0; border: none; margin-bottom: 4px }
+      .data-table td::before { content: attr(data-label); display: block; font-weight: 600; color: #6b7280; font-size: 0.75rem; margin-bottom: 2px }
+      .modal-content { max-width: 95% }
       .form-row { grid-template-columns: 1fr }
-      .modal-content { margin: 10px; max-width: 100% }
     }
     @media (max-width: 640px) {
-      .table-container { border-radius: 6px }
-      .page-header { gap: 6px }
-      .page-header h2 { font-size: 1.1rem }
-      .data-table td { flex-direction: column; align-items: flex-start; padding: 6px 0 }
-      .data-table td::before { margin-bottom: 2px }
-      .modal-form { padding: 10px 12px 12px }
+      .filters-section { padding: 6px }
+      .data-table td { font-size: 0.8rem }
+      .modal-form { padding: 8px 10px }
       .form-group { margin-bottom: 8px }
     }
     .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
