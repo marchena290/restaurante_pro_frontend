@@ -255,7 +255,14 @@ export class DashboardComponent implements OnInit {
             this.recentActivity = sorted.slice(0, 6).map((r: any) => {
               const clienteName = (r.cliente && (r.cliente.nombre ?? r.cliente.name)) ?? (r.clienteNombre ?? 'Cliente');
               const mesaNum = (r.mesa && (r.mesa.numeroMesa ?? r.mesa.numero)) ?? (r.numeroMesa ?? (r.mesaId ? (r.mesaId.numeroMesa ?? r.mesaId) : ''));
-              const time = r.fechaHoraInicio ? new Date(r.fechaHoraInicio).toLocaleString('es-ES') : '';
+              // Format using local timezone to avoid timezone drift (same approach as Reservaciones)
+              let time = '';
+              if (r.fechaHoraInicio) {
+                const dt = new Date(r.fechaHoraInicio);
+                const date = `${dt.getDate()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+                const hour = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                time = `${date} ${hour}`;
+              }
               const estado = (r.estado ?? '').toString().toLowerCase();
               const icon = estado.includes('confirm') ? '✅' : estado.includes('cancel') || estado.includes('no_show') ? '❌' : '🪑';
               const text = `Reserva de ${clienteName} — Mesa ${mesaNum}`;

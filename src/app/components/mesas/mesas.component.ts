@@ -378,7 +378,11 @@ export class MesasComponent implements OnInit {
             const list = byTable[tid].filter(x => x.ts >= now).sort((a,b) => a.ts - b.ts);
             if (list.length) {
               const next = list[0];
-              this.nextReservations[tid] = new Date(next.ts).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+              // Format using local timezone to avoid timezone drift (consistent with Reservaciones)
+              const dt = new Date(next.ts);
+              const date = `${dt.getDate()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+              const hour = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+              this.nextReservations[tid] = `${date} ${hour}`;
               this.nextReservationInfo[tid] = next;
             } else {
               delete this.nextReservations[tid];

@@ -55,9 +55,13 @@
           <td data-label="Mesa">
             <span class="table-name">{{ reservation.tableName }}</span>
           </td>
-          <td data-label="Fecha">{{ formatDate(reservation.date) }}</td>
-          <td data-label="Hora">{{ reservation.time }}</td>
-          <td data-label="Personas">
+          <td data-label="Fecha" class="td-fecha">
+            <span class="cell-date">{{ reservation.fechaHoraInicio | date:'dd/MM/yyyy' }}</span>
+          </td>
+          <td data-label="Hora" class="td-hora">
+            <span class="cell-time">{{ formatTime(reservation.fechaHoraInicio) }}</span>
+          </td>
+          <td data-label="Personas" class="td-personas">
             <span class="guest-count">{{ reservation.guests }}</span>
           </td>
           <td data-label="Estado">

@@ -275,11 +275,18 @@ export class ReservacionesComponent implements OnInit {
     this.editingReservation = reservation;
     this.showModal = true;
 
+    // CRÍTICO: Extraer fecha/hora usando MÉTODOS LOCALES (getFullYear, getMonth, getDate, getHours, getMinutes)
+    // Nunca usar getUTCFullYear(), getUTCMonth(), etc. pues causarían saltos de día en horarios nocturnos
+    // Ejemplo: Una reserva a las 23:00 en Costa Rica (UTC-6) sería las 05:00 UTC del día siguiente
+    const dt = new Date(reservation.fechaHoraInicio);
+    const localDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const localTime = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+
     this.reservationForm.patchValue({
       clientId: reservation.clientId,
       tableId: reservation.tableId,
-      date: reservation.date,
-      time: reservation.time,
+      date: localDate,
+      time: localTime,
       guests: reservation.guests,
       status: reservation.status,
       notes: reservation.notes
@@ -401,10 +408,13 @@ export class ReservacionesComponent implements OnInit {
   }
 
   private mapReservaToReservation(r: Reserva): Reservation {
-    // (debug removed)
+    // IMPORTANTE: Mantener fechaHoraInicio original del backend sin conversión a UTC
+    // El navegador interpreta automáticamente en la zona horaria local del usuario (UTC-6 para Costa Rica)
     const dt = new Date(r.fechaHoraInicio);
-    const date = dt.toISOString().split('T')[0];
-    const time = dt.toTimeString().slice(0,5);
+    // Extraer date y time usando MÉTODOS LOCALES para evitar desfases de zona horaria
+    // Nunca usar .toISOString() ya que convierte a UTC y causa saltos de día
+    const date = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const time = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
 
     // Cliente: preferir campos planos devueltos por ReservaResponseDto (clienteId/clienteNombre/clienteEmail/clientePhone)
     const clientId = (r as any).clienteId ? String((r as any).clienteId) : (r.cliente ? String((r.cliente as any).clienteId ?? (r.cliente as any).clientedId ?? (r.cliente as any).clienteId ?? '') : '');
@@ -500,6 +510,7 @@ export class ReservacionesComponent implements OnInit {
       clientPhone: clientPhone,
       tableId: tableId,
       tableName: tableName,
+      fechaHoraInicio: dt, // Pasar objeto Date para que DatePipe interprete zona horaria local
       date: date,
       time: time,
       guests: Number(guests),
@@ -552,6 +563,14 @@ export class ReservacionesComponent implements OnInit {
       case 'completada': return 'FINALIZADA';
       default: return label.toUpperCase();
     }
+  }
+
+  formatTime(dateTime: Date): string {
+    const hours = dateTime.getHours();
+    const minutes = String(dateTime.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes} ${ampm}`;
   }
 
   formatDate(dateString: string): string {
