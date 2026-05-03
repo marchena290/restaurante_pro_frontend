@@ -10,7 +10,7 @@ import { AuthorizationService } from '../../../services/authorization.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="sidebar" [class.collapsed]="collapsed">
+    <div class="sidebar" [class.collapsed]="collapsed" [class.open]="mobileOpen">
       <div class="sidebar-header">
         <div class="logo">
           <span class="logo-icon">🍽️</span>
@@ -28,6 +28,7 @@ import { AuthorizationService } from '../../../services/authorization.service';
           routerLinkActive="active"
           class="nav-item"
           [title]="collapsed ? item.label : ''"
+          (click)="menuItemSelected()"
         >
           <span class="nav-icon">{{ item.icon }}</span>
           <span class="nav-label" *ngIf="!collapsed">{{ item.label }}</span>
@@ -251,7 +252,9 @@ import { AuthorizationService } from '../../../services/authorization.service';
 })
 export class SidebarComponent {
   @Input() collapsed = false;
+  @Input() mobileOpen = false;
   @Output() toggleCollapse = new EventEmitter<void>();
+  @Output() itemSelected = new EventEmitter<void>();
 
   currentUser: any = null;
   menuItems: any[] = [];
@@ -277,6 +280,10 @@ export class SidebarComponent {
 
   toggleSidebar() {
     this.toggleCollapse.emit();
+  }
+
+  menuItemSelected() {
+    this.itemSelected.emit();
   }
 
   logout() {

@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnDestroy, OnInit } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
@@ -15,6 +15,7 @@ import { SidebarComponent } from './components/layout/sidebar/sidebar.component'
 export class App {
   protected readonly title = signal('restaurante-front-end');
   protected readonly collapsed = signal(false);
+  protected readonly mobileMenuOpen = signal(false);
   protected readonly showShell = signal(true);
   constructor(private router: Router, private activatedRoute: ActivatedRoute) {}
 
@@ -32,10 +33,33 @@ export class App {
       // Hide shell (header/sidebar) on the login page only
       const url = this.router.url.split('?')[0] || '';
       this.showShell.set(url !== '/login');
+      this.setMobileMenuOpen(false);
     });
   }
 
   toggleSidebar() {
+    if (window.innerWidth <= 768) {
+      const nextState = !this.mobileMenuOpen();
+      this.setMobileMenuOpen(nextState);
+      if (nextState) {
+        this.collapsed.set(false);
+      }
+      return;
+    }
+
     this.collapsed.set(!this.collapsed());
+  }
+
+  closeMobileMenu() {
+    this.setMobileMenuOpen(false);
+  }
+
+  ngOnDestroy(): void {
+    this.setMobileMenuOpen(false);
+  }
+
+  private setMobileMenuOpen(open: boolean) {
+    this.mobileMenuOpen.set(open);
+    document.body.classList.toggle('mobile-menu-open', open);
   }
 }

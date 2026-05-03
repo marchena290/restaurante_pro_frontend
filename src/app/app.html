@@ -9,7 +9,14 @@
 
 <div class="app-layout">
   <ng-container *ngIf="showShell()">
-    <app-sidebar [collapsed]="collapsed()" (toggleCollapse)="toggleSidebar()"></app-sidebar>
+    <app-sidebar
+      [collapsed]="collapsed()"
+      [mobileOpen]="mobileMenuOpen()"
+      (toggleCollapse)="toggleSidebar()"
+      (itemSelected)="closeMobileMenu()"
+    ></app-sidebar>
+
+    <div class="sidebar-backdrop" *ngIf="mobileMenuOpen()" (click)="closeMobileMenu()"></div>
 
     <div class="main-area" [class.collapsed]="collapsed()">
       <app-header [pageTitle]="title()" (toggleMobile)="toggleSidebar()"></app-header>
