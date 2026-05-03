@@ -46,30 +46,30 @@
       </thead>
       <tbody>
         <tr *ngFor="let reservation of filteredReservations">
-          <td>
+          <td data-label="Cliente">
             <div class="client-info">
               <div class="client-name">{{ reservation.clientName }}</div>
               <div class="client-email">{{ reservation.clientEmail }}</div>
             </div>
           </td>
-          <td>
+          <td data-label="Mesa">
             <span class="table-name">{{ reservation.tableName }}</span>
           </td>
-          <td>{{ formatDate(reservation.date) }}</td>
-          <td>{{ reservation.time }}</td>
-          <td>
+          <td data-label="Fecha">{{ formatDate(reservation.date) }}</td>
+          <td data-label="Hora">{{ reservation.time }}</td>
+          <td data-label="Personas">
             <span class="guest-count">{{ reservation.guests }}</span>
           </td>
-          <td>
+          <td data-label="Estado">
             <span class="status-badge" [class]="'status-' + (reservation.statusClass || 'pendiente')">
               {{ reservation.status }}
             </span>
           </td>
-          <td title="{{ reservation.notes }}">
+          <td data-label="Notas" title="{{ reservation.notes }}">
             {{ reservation.notes ? (reservation.notes | slice:0:140) : '-' }}
           </td>
-          <td>{{ reservation.clientPhone }}</td>
-          <td>
+          <td data-label="Teléfono">{{ reservation.clientPhone }}</td>
+          <td data-label="Acciones">
             <div class="action-buttons">
               <button
                 class="btn-action btn-edit"

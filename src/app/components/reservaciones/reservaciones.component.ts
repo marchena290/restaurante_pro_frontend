@@ -19,83 +19,94 @@ import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reserv
   templateUrl: './reservaciones.component.html',
   styles: [
     `
-    /* Modal overlay and content */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 20px;
-    }
+    /* Reservaciones component styles - Compact layout */
+    .reservaciones { padding: 16px; min-height: 100%; background: #f8fafc; }
 
-    .modal-content {
-      width: 100%;
-      max-width: 820px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      overflow: hidden;
-      animation: modalEnter .12s ease-out;
-    }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px }
+    .page-header h2 { margin:0; font-size:1.3rem; font-weight:700; color:#0f172a; }
+
+    .filters-section { background:white; padding:8px 10px; border-radius:10px; box-shadow:0 1px 3px rgba(2,6,23,0.04); margin-bottom:12px; display:flex; gap:12px; flex-wrap:wrap }
+    .filter-group { display:flex; flex-direction:column; gap:4px; flex: 1; min-width:200px }
+    .filter-group label { font-size:0.8rem; font-weight:600; color:#475569 }
+    .search-input, .filter-select { padding:6px 8px; border:1px solid #e5e7eb; border-radius:6px; font-size:0.85rem; background:#fbfdff }
+
+    .table-container { background:white; border-radius:10px; box-shadow:0 1px 3px rgba(2,6,23,0.04); overflow:hidden; }
+    .data-table { width:100%; border-collapse:collapse; font-size:0.85rem }
+    .data-table th { padding:8px 10px; text-align:left; font-weight:600; background:#f9fafb; color:#475569; font-size:0.8rem; border-bottom:1px solid #e5e7eb }
+    .data-table td { padding:8px 10px; border-bottom:1px solid #f3f4f6 }
+    .data-table tr:hover { background:#fbfdff }
+
+    .client-info { display:flex; flex-direction:column; gap:2px }
+    .client-name { font-weight:600; color:#0f172a }
+    .client-email { font-size:0.75rem; color:#6b7280 }
+    .table-name { font-weight:500; color:#2563eb }
+    .guest-count { display:inline-block; min-width:24px; text-align:center; padding:2px 4px; border-radius:4px; background:rgba(59,130,246,0.1); color:#2563eb; font-weight:600; font-size:0.8rem }
+    .status-badge { display:inline-block; padding:4px 6px; border-radius:4px; font-size:0.75rem; font-weight:600 }
+    .status-confirmada { background:rgba(34,197,94,0.12); color:#166534 }
+    .status-pendiente { background:rgba(245,158,11,0.12); color:#92400e }
+    .status-cancelada { background:rgba(239,68,68,0.12); color:#991b1b }
+    .status-completada { background:rgba(59,130,246,0.1); color:#1e40af }
+
+    /* Actions */
+    .action-buttons { display:flex; gap:4px }
+    .btn-action { background:transparent; border:none; cursor:pointer; padding:4px; border-radius:6px; font-size:0.95rem }
+    .btn-action:hover { background:#f1f5f9 }
+
+    /* Modal styles */
+    .modal-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.45); z-index:2000; padding:16px }
+
+    .modal-content { background:white; border-radius:10px; width:100%; max-width:600px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 40px rgba(2,6,23,0.12) }
+
+    .modal-header { padding:12px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9 }
+    .modal-header h3 { margin:0; font-size:0.95rem; font-weight:700; color:#0f172a }
+    .modal-close { background:transparent; border:none; font-size:1rem; color:#6b7280; padding:2px 4px; border-radius:4px; cursor:pointer }
+    .modal-close:hover { background:#f1f5f9; color:#0f172a }
+
+    .modal-form { padding:10px 14px; display:grid; gap:8px }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px }
+    .form-group { display:flex; flex-direction:column; gap:4px; margin-bottom:6px }
+    .form-group label { font-size:0.85rem; font-weight:600; color:#0f172a }
+
+    .form-control { padding:6px 8px; border:1px solid #e5e7eb; border-radius:6px; font-size:0.85rem; background:#fbfdff }
+    .form-control:focus { outline:none; box-shadow:0 4px 12px rgba(59,130,246,0.1); border-color:#3b82f6 }
+
+    .error-message { color:#dc2626; font-size:0.75rem; margin-top:2px }
+
+    .modal-actions { display:flex; justify-content:flex-end; gap:6px; padding:8px 14px 10px; border-top:1px solid #f1f5f9 }
+    .btn { padding:6px 10px; border-radius:6px; font-weight:600; border:none; cursor:pointer; font-size:0.85rem }
+    .btn-primary { background:#2563eb; color:white; min-width:100px }
+    .btn-secondary { background:#f3f4f6; color:#0f172a }
 
     @keyframes modalEnter { from { transform: translateY(6px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    .modal-content { animation: modalEnter .12s ease-out; }
 
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      border-bottom: 1px solid #eee;
-      background: linear-gradient(90deg, #f7f9fc, #ffffff);
-    }
-
-    .modal-header h3 { margin: 0; font-size: 18px; color: #222; }
-    .modal-close { background: transparent; border: none; font-size: 18px; cursor: pointer }
-
-    .modal-form { padding: 18px 20px; display: grid; gap: 12px }
-
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
-    .form-group { display: flex; flex-direction: column }
-    .form-group label { font-size: 13px; margin-bottom: 6px; color: #333 }
-
-    .form-control { padding: 8px 10px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px }
-    select.form-control { background: white }
-
-    .error-message { color: #b00020; font-size: 12px; margin-top: 6px }
-
-    .modal-actions { display:flex; gap: 10px; justify-content: flex-end; padding: 12px 20px 20px }
-
-    .btn { padding: 8px 12px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600 }
-    .btn-primary { background: #007bff; color: white }
-    .btn-secondary { background: #f4f6f8; color: #222; border-color: #e6e9ee }
-
-    /* Small screens */
+    /* Mobile responsiveness */
     @media (max-width: 768px) {
-      .data-table { font-size: 0.9rem }
-      .data-table th, .data-table td { padding: 8px 6px }
-      .modal-header { padding: 12px 16px }
-      .modal-form { padding: 12px 16px; gap: 10px }
+      .reservaciones { padding: 10px }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 10px }
+      .page-header h2 { font-size: 1.1rem }
+      .filters-section { flex-direction: column; gap: 8px; padding: 8px; margin-bottom: 10px }
+      .filter-group { min-width: auto; flex: 1 }
+      .data-table { font-size: 0.8rem }
+      .data-table th, .data-table td { padding: 6px 8px }
+      .data-table thead { display: none }
+      .data-table tbody tr { display: block; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 8px; background: white; padding: 8px }
+      .data-table td { display: block; padding: 4px 0; border: none }
+      .data-table td::before { content: attr(data-label); display: block; font-weight: 600; color: #6b7280; font-size: 0.7rem; margin-bottom: 2px }
+      .modal-content { max-width: 95%; padding: 0 }
       .form-row { grid-template-columns: 1fr }
-      .modal-actions { padding: 10px 16px 16px; gap: 8px }
-      .modal-content { max-width: 95%; }
-      .btn { padding: 6px 10px; font-size: 0.9rem }
+      .modal-form { gap: 6px }
+      .form-group { margin-bottom: 4px }
     }
     @media (max-width: 640px) {
-      .form-row { grid-template-columns: 1fr }
-      .modal-content { max-width: 95%; margin: 10px }
-      .modal-actions { padding: 10px }
-      .modal-form { padding: 10px 12px; gap: 8px }
-      .form-group label { font-size: 12px }
-      .form-control { padding: 6px 8px; font-size: 13px }
+      .filters-section { flex-direction: column; gap: 6px; padding: 6px }
+      .filter-group { min-width: auto }
+      .search-input, .filter-select { width: 100% }
+      .data-table td { font-size: 0.75rem }
+      .data-table td::before { font-size: 0.65rem; margin-bottom: 1px }
+      .modal-form { padding: 8px 10px }
+      .form-group { margin-bottom: 4px }
     }
-
-    /* minor improvements for table/overview */
-    .data-table { width: 100%; border-collapse: collapse }
-    .data-table th, .data-table td { padding: 10px 8px; border-bottom: 1px solid #f0f0f0 }
-    .status-badge { padding: 6px 8px; border-radius: 999px; font-size: 13px }
     `
   ]
 })
