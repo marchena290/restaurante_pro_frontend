@@ -20,17 +20,17 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">Usuario o Email</label>
             <input
-              type="email"
+              type="text"
               id="email"
               formControlName="email"
               class="form-control"
               [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-              placeholder="usuario@ejemplo.com"
+              placeholder="invitado o invitado@ejemplo.com"
             >
             <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-              Email es requerido
+              Usuario o email es requerido
             </div>
           </div>
 
@@ -62,8 +62,17 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
             <span *ngIf="!loading">Iniciar Sesión</span>
           </button>
         </form>
-
-        <!-- Demo credentials removed to avoid hardcoded secrets in frontend -->
+        <div class="demo-credentials" aria-live="polite">
+          <h3>Credenciales de prueba</h3>
+          <div class="credential-item">Usuario/Email: <strong>invitado</strong> o <strong>{{ demoCredentials.email }}</strong></div>
+          <div class="credential-item">Contraseña: <strong>{{ demoCredentials.password }}</strong></div>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="useDemo()"
+            [disabled]="loading"
+          >Usar credenciales de prueba</button>
+        </div>
       </div>
     </div>
   `,
@@ -212,6 +221,10 @@ export class LoginComponent {
   loginForm: FormGroup;
   loading = false;
   error = '';
+  demoCredentials = {
+    email: 'invitado@ejemplo.com',
+    password: 'invi123'
+  };
 
   constructor(
     private fb: FormBuilder,
@@ -276,5 +289,12 @@ export class LoginComponent {
         }
       });
     }
+  }
+
+  useDemo() {
+    this.loginForm.patchValue({
+      email: this.demoCredentials.email,
+      password: this.demoCredentials.password
+    });
   }
 }
