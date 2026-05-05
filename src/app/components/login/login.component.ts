@@ -27,7 +27,7 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
               formControlName="email"
               class="form-control"
               [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-              placeholder="invitado o invitado@ejemplo.com"
+              placeholder="invitado o invitado@restaurante.com"
             >
             <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
               Usuario o email es requerido
