@@ -64,7 +64,7 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
         </form>
         <div class="demo-credentials" aria-live="polite">
           <h3>Credenciales de prueba</h3>
-          <div class="credential-item">Usuario o Email: <strong>invitado</strong> o <strong>invitado@restaurant.com</strong></div>
+          <div class="credential-item">User o Email: <strong>invitado</strong> o <strong>invitado@restaurant.com</strong></div>
           <div class="credential-item">Contraseña: <strong>{{ demoCredentials.password }}</strong></div>
           <button
             type="button"
