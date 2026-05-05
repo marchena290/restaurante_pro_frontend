@@ -27,7 +27,7 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
               formControlName="email"
               class="form-control"
               [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-              placeholder="invitado"
+              placeholder="invitado o invitado@restaurant.com"
             >
             <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
               Usuario o email es requerido
@@ -64,7 +64,7 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
         </form>
         <div class="demo-credentials" aria-live="polite">
           <h3>Credenciales de prueba</h3>
-          <div class="credential-item">Usuario <strong>invitado</strong></div>
+          <div class="credential-item">Usuario o Email: <strong>invitado</strong> o <strong>invitado@restaurant.com</strong></div>
           <div class="credential-item">Contraseña: <strong>{{ demoCredentials.password }}</strong></div>
           <button
             type="button"
