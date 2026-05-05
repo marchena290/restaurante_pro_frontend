@@ -24,6 +24,10 @@ import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
         </button>
       </div>
 
+        <div *ngIf="isGuest" class="demo-warning">
+          Esta es una vista de solo lectura en la demo. Crear, editar o eliminar mesas está deshabilitado para invitados.
+        </div>
+
       <div class="filters-section">
         <div class="filter-group">
           <label>Buscar:</label>
@@ -286,6 +290,7 @@ import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
       .modal-content { width: 100%; padding:14px }
       .form-row { flex-direction:column }
     }
+    .demo-warning { background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 12px; margin:8px 0 12px 0; border-radius:6px; color:#92400e; font-weight:600 }
     `
   ]
 })

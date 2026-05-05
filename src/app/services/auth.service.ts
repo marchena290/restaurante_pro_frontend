@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { environment } from "../../environments/environment";
 import { tap, BehaviorSubject, of, throwError } from "rxjs";
 import { delay } from 'rxjs/operators';
+import { InputSanitizerService } from './input-sanitizer.service';
 
 const TOKEN_KEY = 'restpro_token';
 
@@ -14,26 +15,31 @@ export class AuthService {
   private authState = new BehaviorSubject<boolean>(this.isLoggedIn());
   public authState$ = this.authState.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private sanitizer: InputSanitizerService) {}
 
   login(credentials: { email?: string; username?: string; password: string}) {
     // In dev, provide a simple mocked login so the UI can be tested without backend
+    // Basic frontend sanitization to catch obvious injection attempts
+    const username = credentials.username ?? credentials.email ?? '';
+    if (!this.sanitizer.isSafeString(username) || !this.sanitizer.isSafeString(credentials.password)) {
+      return throwError(() => new Error('Entrada inválida: caracteres no permitidos')).pipe(delay(200));
+    }
+
     if (environment.useMocks) {
       const id = credentials.email ?? credentials.username ?? 'demo@local';
       const pw = credentials.password ?? '';
 
-      // simple demo credentials handling
-      const isAdmin = (id === 'admin@restaurant.com' && pw === 'admin123');
-      const isEmpleado = (id === 'empleado@restaurant.com' && pw === 'empleado123');
-
-      if (!isAdmin && !isEmpleado) {
+      // Simplified mock behavior: accept any non-empty credentials in dev mocks
+      // and return a demo token. Default role is GUEST to avoid embedding
+      // privileged demo credentials in source code.
+      if (!id || !pw) {
         return throwError(() => new Error('Credenciales de prueba inválidas')).pipe(delay(300));
       }
 
-      const role = isAdmin ? 'ADMIN' : 'EMPLEADO';
+      const role = 'GUEST';
       const payload = {
         sub: id,
-        name: isAdmin ? 'Administrador Demo' : 'Empleado Demo',
+        name: 'Usuario Demo',
         email: id,
         roles: [role]
       };
@@ -69,6 +75,10 @@ export class AuthService {
 
     // Map form credentials to backend contract: backend expects { username, password }
     const body = { username: credentials.username ?? credentials.email, password: credentials.password };
+
+    // Additional sanitization before sending
+    body.username = this.sanitizer.sanitizeString(body.username);
+    body.password = this.sanitizer.sanitizeString(body.password);
 
     return this.http.post<any>(`${environment.apiUrl}/auth/login`, body).pipe(
       tap((res: any) => {

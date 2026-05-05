@@ -1,10 +1,14 @@
 <div class="reservaciones">
   <div class="page-header">
     <h2>Gestión de Reservaciones</h2>
-    <button class="btn btn-primary" (click)="openModal()">
+    <button class="btn btn-primary" (click)="openModal()" [disabled]="isGuest">
       <span class="btn-icon">➕</span>
       Nueva Reservación
     </button>
+  </div>
+
+  <div *ngIf="isGuest" class="demo-warning">
+    Esta es una vista de solo lectura en la demo. Crear, editar o eliminar reservaciones está deshabilitado para invitados.
   </div>
 
   <div class="filters-section">
@@ -79,12 +83,14 @@
                 class="btn-action btn-edit"
                 (click)="editReservation(reservation)"
                 title="Editar"
+                [disabled]="isGuest"
               >
                 ✏️
               </button>
               <button
                 class="btn-action btn-delete"
                 (click)="deleteReservation(reservation.id)"
+                [disabled]="isGuest"
                 title="Eliminar"
               >
                 🗑️

@@ -21,6 +21,10 @@ import { AuthService } from '../../services/auth.service';
         </button>
       </div>
 
+        <div *ngIf="isGuest" class="demo-warning">
+          Esta es una vista de solo lectura en la demo. Crear, editar o eliminar menús está deshabilitado para invitados.
+        </div>
+
       <div class="filters-section">
         <div class="filter-group">
           <label>Buscar:</label>
@@ -230,6 +234,7 @@ import { AuthService } from '../../services/auth.service';
       .form-row.small-row { grid-template-columns: 1fr; gap: 8px }
       .price-input { max-width: 100% }
     }
+    .demo-warning { background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 12px; margin:8px 0 12px 0; border-radius:6px; color:#92400e; font-weight:600 }
     `
   ]
 })

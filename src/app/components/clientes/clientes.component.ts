@@ -7,6 +7,7 @@ import { ReservacionesService } from '../../services/reservaciones.service';
 import { Cliente as ClienteApi, CreateClienteDto, UpdateClienteDto } from '../../models/cliente.model';
 import { ConfirmService } from '../../services/confirm.service';
 import { NotificationService } from '../../services/notification.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-clientes',
@@ -16,10 +17,14 @@ import { NotificationService } from '../../services/notification.service';
     <div class="clientes">
       <div class="page-header">
         <h2>Gestión de Clientes</h2>
-        <button class="btn btn-primary" (click)="openModal()">
+        <button class="btn btn-primary" (click)="openModal()" [disabled]="isGuest">
           <span class="btn-icon">➕</span>
           Nuevo Cliente
         </button>
+      </div>
+
+      <div *ngIf="isGuest" class="demo-warning">
+        Esta es una vista de solo lectura en la demo. Crear, editar o eliminar clientes está deshabilitado para invitados.
       </div>
 
       <div class="filters-section">
@@ -71,6 +76,7 @@ import { NotificationService } from '../../services/notification.service';
                     class="btn-action btn-edit"
                     (click)="editClient(client)"
                     title="Editar"
+                    [disabled]="isGuest"
                   >
                     ✏️
                   </button>
@@ -78,7 +84,7 @@ import { NotificationService } from '../../services/notification.service';
                     type="button"
                     class="btn-action btn-delete"
                     (click)="onDeleteClicked(client.id)"
-                    [disabled]="isSubmitting"
+                    [disabled]="isSubmitting || isGuest"
                     title="Eliminar"
                   >
                     <span *ngIf="!isSubmitting">🗑️</span>
@@ -160,7 +166,7 @@ import { NotificationService } from '../../services/notification.service';
               <button
                 type="submit"
                 class="btn btn-primary"
-                [disabled]="clientForm.invalid"
+                [disabled]="clientForm.invalid || isGuest"
               >
                 {{ editingClient ? 'Actualizar' : 'Crear' }} Cliente
               </button>
@@ -243,6 +249,7 @@ import { NotificationService } from '../../services/notification.service';
       .modal-form { padding: 8px 10px }
       .form-group { margin-bottom: 8px }
     }
+    .demo-warning { background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 12px; margin:8px 0 12px 0; border-radius:6px; color:#92400e; font-weight:600 }
     .inline-confirm { display:inline-flex; gap:8px; align-items:center; }
     .confirm-text { font-size:0.9rem; color:#374151; margin-right:6px; }
     .btn-sm { padding:6px 8px; border-radius:6px; font-size:0.85rem; }
@@ -252,6 +259,7 @@ import { NotificationService } from '../../services/notification.service';
 export class ClientesComponent implements OnInit {
   clients: Client[] = [];
   filteredClients: Client[] = [];
+  isGuest: boolean = false;
   searchTerm = '';
   showModal = false;
   editingClient: Client | null = null;
@@ -260,7 +268,7 @@ export class ClientesComponent implements OnInit {
 
   clientForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private clientesService: ClientesService, private reservasService: ReservacionesService, private confirmService: ConfirmService, private notification: NotificationService) {
+  constructor(private fb: FormBuilder, private clientesService: ClientesService, private reservasService: ReservacionesService, private confirmService: ConfirmService, private notification: NotificationService, private auth: AuthService) {
     this.clientForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -270,6 +278,7 @@ export class ClientesComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isGuest = this.auth.isGuest();
     this.loadClients();
   }
   private loadClients() {
@@ -353,6 +362,10 @@ export class ClientesComponent implements OnInit {
   }
 
   openModal() {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten crear clientes.', 'info');
+      return;
+    }
     this.showModal = true;
     this.editingClient = null;
     this.clientForm.reset();
@@ -364,6 +377,10 @@ export class ClientesComponent implements OnInit {
   }
 
   editClient(client: Client) {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten editar clientes.', 'info');
+      return;
+    }
     this.editingClient = client;
     this.showModal = true;
 
@@ -376,6 +393,11 @@ export class ClientesComponent implements OnInit {
   }
 
   onDeleteClicked(id: string) {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten eliminar clientes.', 'info');
+      return;
+    }
+
     this.confirmService.confirm({
       title: 'Eliminar cliente',
       message: '¿Está seguro de eliminar este cliente? Esta acción no se puede deshacer.',
@@ -401,6 +423,11 @@ export class ClientesComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten cambios.', 'info');
+      return;
+    }
+
     if (this.clientForm.valid) {
       const formData = this.clientForm.value as CreateClientRequest;
       this.isSubmitting = true;

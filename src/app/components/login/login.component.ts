@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { InputSanitizerService } from '../../services/input-sanitizer.service';
 
 @Component({
   selector: 'app-login',
@@ -62,12 +63,7 @@ import { AuthService } from '../../services/auth.service';
           </button>
         </form>
 
-        <div class="demo-credentials">
-          <h3>Credencial de Prueba:</h3>
-          <div class="credential-item">
-            <strong>Invitado:</strong> invitado&#64;restaurant.com / invi123
-          </div>
-        </div>
+        <!-- Demo credentials removed to avoid hardcoded secrets in frontend -->
       </div>
     </div>
   `,
@@ -220,7 +216,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private sanitizer: InputSanitizerService
   ) {
     // Accept either email or username in the same field; backend expects `username`.
     this.loginForm = this.fb.group({
@@ -234,7 +231,15 @@ export class LoginComponent {
       this.loading = true;
       this.error = '';
 
-      this.authService.login(this.loginForm.value).subscribe({
+      // Frontend check: reject obvious injection attempts before calling the service
+      const creds = this.loginForm.value;
+      if (!this.sanitizer.isSafeString(creds.email) || !this.sanitizer.isSafeString(creds.password)) {
+        this.loading = false;
+        this.error = 'Entrada inválida: caracteres no permitidos';
+        return;
+      }
+
+      this.authService.login(creds).subscribe({
         next: () => {
           this.loading = false;
           this.router.navigate(['/dashboard']);

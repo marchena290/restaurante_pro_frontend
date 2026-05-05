@@ -19,7 +19,7 @@ export const routes: Routes = [
   {
     path: 'clientes',
     canActivate: [AuthGuard],
-    data: { roles: ['ADMIN', 'EMPLEADO'], title: 'Clientes' },
+    data: { roles: ['ADMIN', 'EMPLEADO', 'GUEST'], title: 'Clientes' },
     loadComponent: () => import('./components/clientes/clientes.component').then(m => m.ClientesComponent)
   },
 
@@ -40,7 +40,7 @@ export const routes: Routes = [
   {
     path: 'reservaciones',
     canActivate: [AuthGuard],
-    data: { roles: ['ADMIN', 'EMPLEADO'], title: 'Reservaciones' },
+    data: { roles: ['ADMIN', 'EMPLEADO', 'GUEST'], title: 'Reservaciones' },
     loadComponent: () => import('./components/reservaciones/reservaciones.component').then(m => m.ReservacionesComponent)
   },
 

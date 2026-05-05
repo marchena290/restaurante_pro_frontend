@@ -10,6 +10,7 @@ import { MesasService } from '../../services/mesas.service';
 import { NotificationService } from '../../services/notification.service';
 import { humanizeEstadoReserva } from '../../utils/estado-reserva.util';
 import { ConfirmService } from '../../services/confirm.service';
+import { AuthService } from '../../services/auth.service';
 import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reservacion.model';
 
 @Component({
@@ -107,6 +108,7 @@ import { Reserva, CreateReservaDto, UpdateReservaDto } from '../../models/reserv
       .modal-form { padding: 8px 10px }
       .form-group { margin-bottom: 4px }
     }
+    .demo-warning { background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 12px; margin:8px 0 12px 0; border-radius:6px; color:#92400e; font-weight:600 }
     `
   ]
 })
@@ -124,6 +126,8 @@ export class ReservacionesComponent implements OnInit {
 
 
   reservationForm: FormGroup;
+
+  isGuest: boolean = false;
 
   // Mensaje de solapamiento y flag para el botón
   overlapWarning: string = '';
@@ -176,6 +180,7 @@ export class ReservacionesComponent implements OnInit {
     private mesasService: MesasService,
     private notification: NotificationService,
     private confirm: ConfirmService
+    , private auth: AuthService
   ) {
     this.reservationForm = this.fb.group({
       clientId: ['', Validators.required],
@@ -192,6 +197,7 @@ export class ReservacionesComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isGuest = this.auth.isGuest();
     this.loadData();
   }
   private loadData() {
@@ -255,6 +261,10 @@ export class ReservacionesComponent implements OnInit {
   }
 
   openModal() {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten crear reservaciones.', 'info');
+      return;
+    }
     this.showModal = true;
     this.editingReservation = null;
     this.reservationForm.reset({ guests: 2, status: 'Pendiente' });
@@ -272,6 +282,10 @@ export class ReservacionesComponent implements OnInit {
   }
 
   editReservation(reservation: Reservation) {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten editar reservaciones.', 'info');
+      return;
+    }
     this.editingReservation = reservation;
     this.showModal = true;
 
@@ -297,6 +311,11 @@ export class ReservacionesComponent implements OnInit {
   }
 
   deleteReservation(id: string) {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten eliminar reservaciones.', 'info');
+      return;
+    }
+
     this.confirm.confirm({ title: 'Eliminar reservación', message: '¿Está seguro de eliminar esta reservación?' }).then(ok => {
       if (!ok) return;
       // call backend
@@ -331,6 +350,11 @@ export class ReservacionesComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.isGuest) {
+      this.notification.show('Modo demo: la vista es de solo lectura. No se permiten cambios.', 'info');
+      return;
+    }
+
     if (this.isSubmitting) return; // evitar doble envío
     if (!this.reservationForm.valid) return;
 
