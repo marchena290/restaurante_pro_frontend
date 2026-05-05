@@ -222,7 +222,7 @@ export class LoginComponent {
   loading = false;
   error = '';
   demoCredentials = {
-    email: 'invitado@ejemplo.com',
+    email: 'invitado@restaurante.com',
     password: 'invi123'
   };
 

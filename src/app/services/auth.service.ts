@@ -73,12 +73,18 @@ export class AuthService {
       );
     }
 
-    // Map form credentials to backend contract: backend expects { username, password }
-    const body = { username: credentials.username ?? credentials.email, password: credentials.password };
+    // Map form credentials to backend contract: send `username` and `email` so
+    // backend can accept either identifier. Backend contract still uses `username`.
+    const body: any = {
+      username: credentials.username ?? credentials.email,
+      password: credentials.password,
+      email: credentials.email ?? credentials.username
+    };
 
     // Additional sanitization before sending
     body.username = this.sanitizer.sanitizeString(body.username);
     body.password = this.sanitizer.sanitizeString(body.password);
+    body.email = this.sanitizer.sanitizeString(body.email);
 
     return this.http.post<any>(`${environment.apiUrl}/auth/login`, body).pipe(
       tap((res: any) => {
